@@ -73,16 +73,20 @@ export const DERIVED_LABELS: Record<string, DerivedLabel> = {
 
   // Nieces & Nephews
   'sibling.child':             { label: 'niece/nephew', gendered: ['niece', 'nephew'] },
+  'sibling.child.child':       { label: 'grandniece/grandnephew', gendered: ['grandniece', 'grandnephew'] },
 
   // Cousins (just "cousin" - no second/removed nonsense)
   'parent.sibling.child':      { label: 'cousin' },
 
   // In-laws
   'spouse.parent':             { label: 'parent-in-law', gendered: ['mother-in-law', 'father-in-law'] },
+  'spouse.parent.parent':      { label: 'grandparent-in-law', gendered: ['grandma-in-law', 'grandpa-in-law'] },
   'spouse.sibling':            { label: 'sibling-in-law', gendered: ['sister-in-law', 'brother-in-law'] },
   'sibling.spouse':            { label: 'sibling-in-law', gendered: ['sister-in-law', 'brother-in-law'] },
   'child.spouse':              { label: 'child-in-law', gendered: ['daughter-in-law', 'son-in-law'] },
+  'child.child.spouse':        { label: 'grandchild-in-law', gendered: ['granddaughter-in-law', 'grandson-in-law'] },
   'parent.sibling.spouse':     { label: 'aunt/uncle', gendered: ['aunt', 'uncle'] },  // Married-in aunt/uncle
+  'spouse.sibling.child':      { label: 'niece/nephew', gendered: ['niece', 'nephew'] },  // Spouse's niece/nephew
 
   // Step-family (through parent's spouse)
   'parent.spouse':             { label: 'step-parent', gendered: ['step-mom', 'step-dad'] },
