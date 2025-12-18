@@ -67,11 +67,11 @@ export class RelationshipEngine {
     const listA = this.adjacencyList.get(rel.personAId) || [];
     const listB = this.adjacencyList.get(rel.personBId) || [];
 
-    // A -> B with the stated type
-    listA.push({ personId: rel.personBId, type: rel.type, relationshipId: rel.id });
-
-    // B -> A with the inverse type
-    listB.push({ personId: rel.personAId, type: this.getInverseType(rel.type), relationshipId: rel.id });
+    // "A is [type] of B" means:
+    // - From B going to A: B follows [type] to reach A (e.g., B goes to their parent A)
+    // - From A going to B: A follows inverse (e.g., A goes to their child B)
+    listA.push({ personId: rel.personBId, type: this.getInverseType(rel.type), relationshipId: rel.id });
+    listB.push({ personId: rel.personAId, type: rel.type, relationshipId: rel.id });
 
     this.adjacencyList.set(rel.personAId, listA);
     this.adjacencyList.set(rel.personBId, listB);
