@@ -5,13 +5,14 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { RelationshipEngine } from '../engine/RelationshipEngine';
 import { IndexedDBAdapter } from '../storage/IndexedDBAdapter';
-import type { Person, RelationshipType, PersonWithRelations, RelationshipPath } from '../types';
+import type { Person, RelationshipType, PersonExplanation } from '../types';
 
 interface EngineContextValue {
   engine: RelationshipEngine | null;
   isLoading: boolean;
   error: string | null;
   people: Person[];
+  user: Person | undefined;
   refreshPeople: () => void;
 }
 
@@ -22,6 +23,7 @@ export function EngineProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [people, setPeople] = useState<Person[]>([]);
+  const [user, setUser] = useState<Person | undefined>();
 
   useEffect(() => {
     async function initEngine() {
@@ -34,6 +36,7 @@ export function EngineProvider({ children }: { children: ReactNode }) {
 
         setEngine(eng);
         setPeople(eng.getAllPeople());
+        setUser(eng.getUser());
         setIsLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to initialize');
@@ -47,11 +50,12 @@ export function EngineProvider({ children }: { children: ReactNode }) {
   const refreshPeople = useCallback(() => {
     if (engine) {
       setPeople(engine.getAllPeople());
+      setUser(engine.getUser());
     }
   }, [engine]);
 
   return (
-    <EngineContext.Provider value={{ engine, isLoading, error, people, refreshPeople }}>
+    <EngineContext.Provider value={{ engine, isLoading, error, people, user, refreshPeople }}>
       {children}
     </EngineContext.Provider>
   );
@@ -100,12 +104,31 @@ export function useDeletePerson() {
   }, [engine, refreshPeople]);
 }
 
-// Hook for getting a person with all their relations
-export function usePersonWithRelations(id: string | null): PersonWithRelations | undefined {
+// Hook for setting the user ("you")
+export function useSetUser() {
+  const { engine, refreshPeople } = useEngine();
+
+  return useCallback(async (id: string) => {
+    if (!engine) return;
+    await engine.setUser(id);
+    refreshPeople();
+  }, [engine, refreshPeople]);
+}
+
+// Hook for getting explanations for a person
+export function useExplanations(personId: string | null): PersonExplanation | undefined {
   const { engine } = useEngine();
 
-  if (!engine || !id) return undefined;
-  return engine.getPersonWithRelations(id);
+  if (!engine || !personId) return undefined;
+  return engine.getExplanations(personId);
+}
+
+// Hook for getting display name
+export function useDisplayName(personId: string | null): string {
+  const { engine } = useEngine();
+
+  if (!engine || !personId) return '';
+  return engine.getDisplayName(personId);
 }
 
 // Hook for adding a relationship
@@ -115,22 +138,21 @@ export function useAddRelationship() {
   return useCallback(async (
     personAId: string,
     personBId: string,
-    type: RelationshipType,
-    options?: { startDate?: string; endDate?: string; notes?: string }
+    type: RelationshipType
   ) => {
     if (!engine) return undefined;
-    const rel = await engine.addRelationship(personAId, personBId, type, options);
+    const rel = await engine.addRelationship(personAId, personBId, type);
     refreshPeople();
     return rel;
   }, [engine, refreshPeople]);
 }
 
-// Hook for finding relationship between two people
-export function useFindRelationship(fromId: string | null, toId: string | null): RelationshipPath | undefined {
+// Hook for getting direct relationships
+export function useDirectRelationships(personId: string | null) {
   const { engine } = useEngine();
 
-  if (!engine || !fromId || !toId) return undefined;
-  return engine.findRelationshipPath(fromId, toId);
+  if (!engine || !personId) return [];
+  return engine.getDirectRelationships(personId);
 }
 
 // Hook for data export/import

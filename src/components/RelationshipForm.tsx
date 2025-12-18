@@ -8,13 +8,21 @@ interface RelationshipFormProps {
   onClose: () => void;
 }
 
+// Only these 5 types - everything else is derived!
+const RELATIONSHIP_OPTIONS: { type: RelationshipType; label: string; description: string }[] = [
+  { type: 'parent', label: 'is a parent of', description: 'Mom, Dad, etc.' },
+  { type: 'child', label: 'is a child of', description: 'Son, Daughter, etc.' },
+  { type: 'sibling', label: 'is a sibling of', description: 'Brother, Sister' },
+  { type: 'spouse', label: 'is married to / partnered with', description: 'Husband, Wife, Partner' },
+  { type: 'friend', label: 'is a friend of', description: 'Family friend' },
+];
+
 export function RelationshipForm({ person, onClose }: RelationshipFormProps) {
   const { people } = useEngine();
   const addRelationship = useAddRelationship();
 
   const [selectedPersonId, setSelectedPersonId] = useState('');
   const [relationshipType, setRelationshipType] = useState<RelationshipType>('parent');
-  const [startDate, setStartDate] = useState('');
 
   const otherPeople = people.filter(p => p.id !== person.id);
 
@@ -23,67 +31,67 @@ export function RelationshipForm({ person, onClose }: RelationshipFormProps) {
 
     if (!selectedPersonId) return;
 
-    await addRelationship(
-      person.id,
-      selectedPersonId,
-      relationshipType,
-      startDate ? { startDate } : undefined
-    );
-
+    await addRelationship(person.id, selectedPersonId, relationshipType);
     onClose();
   };
 
-  const relationshipLabels: Record<RelationshipType, string> = {
-    parent: 'is a parent of',
-    child: 'is a child of',
-    spouse: 'is married to',
-    sibling: 'is a sibling of',
-    partner: 'is a partner of'
-  };
+  const selectedOption = RELATIONSHIP_OPTIONS.find(o => o.type === relationshipType);
 
   return (
     <form className="relationship-form" onSubmit={handleSubmit}>
       <h2>Add Relationship</h2>
 
-      <div className="relationship-sentence">
-        <span className="person-name">{person.firstName}</span>
+      <p className="form-description">
+        Define how <strong>{person.name}</strong> is related to someone else.
+        <br />
+        <em>Labels like "aunt" or "grandpa" are figured out automatically!</em>
+      </p>
 
-        <select
-          value={relationshipType}
-          onChange={(e) => setRelationshipType(e.target.value as RelationshipType)}
-          className="relationship-select"
-        >
-          {Object.entries(relationshipLabels).map(([type, label]) => (
-            <option key={type} value={type}>{label}</option>
-          ))}
-        </select>
+      <div className="relationship-builder">
+        <div className="relationship-person">
+          <span className="person-name-tag">{person.name}</span>
+        </div>
 
-        <select
-          value={selectedPersonId}
-          onChange={(e) => setSelectedPersonId(e.target.value)}
-          className="person-select"
-          required
-        >
-          <option value="">Select person...</option>
-          {otherPeople.map(p => (
-            <option key={p.id} value={p.id}>
-              {p.firstName} {p.lastName}
-            </option>
+        <div className="relationship-type-select">
+          {RELATIONSHIP_OPTIONS.map(option => (
+            <label
+              key={option.type}
+              className={`type-option ${relationshipType === option.type ? 'selected' : ''}`}
+            >
+              <input
+                type="radio"
+                name="relationshipType"
+                value={option.type}
+                checked={relationshipType === option.type}
+                onChange={(e) => setRelationshipType(e.target.value as RelationshipType)}
+              />
+              <span className="type-label">{option.label}</span>
+              <span className="type-hint">{option.description}</span>
+            </label>
           ))}
-        </select>
+        </div>
+
+        <div className="relationship-target">
+          <select
+            value={selectedPersonId}
+            onChange={(e) => setSelectedPersonId(e.target.value)}
+            required
+          >
+            <option value="">Select person...</option>
+            {otherPeople.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {(relationshipType === 'spouse' || relationshipType === 'partner') && (
-        <div className="form-group">
-          <label htmlFor="startDate">
-            {relationshipType === 'spouse' ? 'Marriage Date' : 'Start Date'}
-          </label>
-          <input
-            id="startDate"
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
+      {selectedPersonId && selectedOption && (
+        <div className="relationship-preview">
+          <strong>{person.name}</strong> {selectedOption.label} <strong>
+            {otherPeople.find(p => p.id === selectedPersonId)?.name}
+          </strong>
         </div>
       )}
 

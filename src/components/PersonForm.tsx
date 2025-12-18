@@ -6,30 +6,25 @@ interface PersonFormProps {
   person?: Person;
   onSubmit: (data: Omit<Person, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onCancel: () => void;
+  isFirstPerson?: boolean;
 }
 
-export function PersonForm({ person, onSubmit, onCancel }: PersonFormProps) {
-  const [firstName, setFirstName] = useState(person?.firstName ?? '');
-  const [lastName, setLastName] = useState(person?.lastName ?? '');
-  const [nickname, setNickname] = useState(person?.nickname ?? '');
-  const [birthDate, setBirthDate] = useState(person?.birthDate ?? '');
-  const [deathDate, setDeathDate] = useState(person?.deathDate ?? '');
+export function PersonForm({ person, onSubmit, onCancel, isFirstPerson }: PersonFormProps) {
+  const [name, setName] = useState(person?.name ?? '');
   const [gender, setGender] = useState<Person['gender']>(person?.gender);
   const [notes, setNotes] = useState(person?.notes ?? '');
+  const [isUser, setIsUser] = useState(person?.isUser ?? isFirstPerson ?? false);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
-    if (!firstName.trim() || !lastName.trim()) return;
+    if (!name.trim()) return;
 
     onSubmit({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      nickname: nickname.trim() || undefined,
-      birthDate: birthDate || undefined,
-      deathDate: deathDate || undefined,
+      name: name.trim(),
       gender,
-      notes: notes.trim() || undefined
+      notes: notes.trim() || undefined,
+      isUser
     });
   };
 
@@ -37,77 +32,50 @@ export function PersonForm({ person, onSubmit, onCancel }: PersonFormProps) {
     <form className="person-form" onSubmit={handleSubmit}>
       <h2>{person ? 'Edit Person' : 'Add Person'}</h2>
 
-      <div className="form-row">
-        <div className="form-group">
-          <label htmlFor="firstName">First Name *</label>
-          <input
-            id="firstName"
-            type="text"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            required
-            autoFocus
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="lastName">Last Name *</label>
-          <input
-            id="lastName"
-            type="text"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            required
-          />
-        </div>
+      <div className="form-group">
+        <label htmlFor="name">Name *</label>
+        <input
+          id="name"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g., Betty, Joe, Mom"
+          required
+          autoFocus
+        />
+        <p className="form-hint">
+          Just their first name or what you call them
+        </p>
       </div>
 
-      <div className="form-row">
-        <div className="form-group">
-          <label htmlFor="nickname">Nickname</label>
-          <input
-            id="nickname"
-            type="text"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="gender">Gender</label>
-          <select
-            id="gender"
-            value={gender ?? ''}
-            onChange={(e) => setGender(e.target.value as Person['gender'] || undefined)}
-          >
-            <option value="">Not specified</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
+      <div className="form-group">
+        <label htmlFor="gender">Gender</label>
+        <select
+          id="gender"
+          value={gender ?? ''}
+          onChange={(e) => setGender(e.target.value as Person['gender'] || undefined)}
+        >
+          <option value="">Not specified</option>
+          <option value="female">Female</option>
+          <option value="male">Male</option>
+        </select>
+        <p className="form-hint">
+          Helps with labels like "mom" vs "dad", "aunt" vs "uncle"
+        </p>
       </div>
 
-      <div className="form-row">
-        <div className="form-group">
-          <label htmlFor="birthDate">Birth Date</label>
+      <div className="form-group checkbox-group">
+        <label>
           <input
-            id="birthDate"
-            type="date"
-            value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
+            type="checkbox"
+            checked={isUser}
+            onChange={(e) => setIsUser(e.target.checked)}
           />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="deathDate">Death Date</label>
-          <input
-            id="deathDate"
-            type="date"
-            value={deathDate}
-            onChange={(e) => setDeathDate(e.target.value)}
-          />
-        </div>
+          <span>This is me</span>
+        </label>
+        <p className="form-hint">
+          Mark yourself so explanations can say "your mom", "your cousin", etc.
+        </p>
       </div>
 
       <div className="form-group">
@@ -116,7 +84,8 @@ export function PersonForm({ person, onSubmit, onCancel }: PersonFormProps) {
           id="notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          rows={3}
+          placeholder="Optional notes..."
+          rows={2}
         />
       </div>
 
@@ -125,7 +94,7 @@ export function PersonForm({ person, onSubmit, onCancel }: PersonFormProps) {
           Cancel
         </button>
         <button type="submit" className="btn-primary">
-          {person ? 'Save Changes' : 'Add Person'}
+          {person ? 'Save' : 'Add Person'}
         </button>
       </div>
     </form>

@@ -9,7 +9,7 @@ import { openDB, type IDBPDatabase } from 'idb';
 import type { Person, Relationship, StorageAdapter } from '../types';
 
 const DB_NAME = 'our-people-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Bumped for new schema
 
 interface OurPeopleDB {
   people: Person;
@@ -23,12 +23,23 @@ export class IndexedDBAdapter implements StorageAdapter {
     if (this.db) return;
 
     this.db = await openDB<OurPeopleDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
+      upgrade(db, oldVersion) {
+        // Handle migration from v1 to v2
+        if (oldVersion < 2) {
+          // Delete old stores if they exist (fresh start for new schema)
+          if (db.objectStoreNames.contains('people')) {
+            db.deleteObjectStore('people');
+          }
+          if (db.objectStoreNames.contains('relationships')) {
+            db.deleteObjectStore('relationships');
+          }
+        }
+
         // People store
         if (!db.objectStoreNames.contains('people')) {
           const peopleStore = db.createObjectStore('people', { keyPath: 'id' });
-          peopleStore.createIndex('lastName', 'lastName');
-          peopleStore.createIndex('updatedAt', 'updatedAt');
+          peopleStore.createIndex('name', 'name');
+          peopleStore.createIndex('isUser', 'isUser');
         }
 
         // Relationships store

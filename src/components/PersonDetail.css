@@ -3,14 +3,7 @@
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-}
-
-.detail-header {
   position: relative;
-  text-align: center;
-  padding: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
 }
 
 .close-btn {
@@ -20,22 +13,30 @@
   width: 36px;
   height: 36px;
   border: none;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
+  background: #e2e8f0;
+  color: #4a5568;
   font-size: 1.5rem;
   line-height: 1;
   border-radius: 50%;
   cursor: pointer;
   transition: background 0.2s ease;
+  z-index: 10;
 }
 
 .close-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #cbd5e0;
+}
+
+.detail-header {
+  text-align: center;
+  padding: 2rem 2rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
 }
 
 .detail-avatar {
-  width: 100px;
-  height: 100px;
+  width: 80px;
+  height: 80px;
   margin: 0 auto 1rem;
   border-radius: 50%;
   overflow: hidden;
@@ -58,87 +59,124 @@
   text-transform: uppercase;
 }
 
-.detail-header h1 {
+.detail-name {
   margin: 0;
-  font-size: 1.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
 }
 
-.detail-header .dates {
-  margin: 0.5rem 0 0;
-  opacity: 0.9;
-}
-
-.detail-header .notes {
-  margin: 1rem auto 0;
-  max-width: 400px;
-  opacity: 0.9;
-  font-size: 0.95rem;
-}
-
-.detail-actions {
-  display: flex;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.detail-actions button {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.detail-actions .btn-secondary {
+.you-badge-large {
+  display: inline-block;
+  margin-top: 0.5rem;
   background: rgba(255, 255, 255, 0.2);
   color: white;
-}
-
-.detail-actions .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.btn-danger {
-  background: #fc8181;
-  color: white;
-}
-
-.btn-danger:hover {
-  background: #f56565;
-}
-
-.relationships-section {
-  padding: 1.5rem;
-}
-
-.relationship-group {
-  margin-bottom: 1.5rem;
-}
-
-.relationship-group:last-child {
-  margin-bottom: 0;
-}
-
-.relationship-group h3 {
-  margin: 0 0 1rem;
-  font-size: 1rem;
-  color: #718096;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.relationship-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
+.explanations-section {
+  padding: 1.5rem 2rem;
 }
 
-.no-relationships {
+.explanations-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.explanation-item {
+  padding: 0.75rem 0;
+  font-size: 1.1rem;
+  color: #2d3748;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.explanation-item:last-child {
+  border-bottom: none;
+}
+
+.explanation-item::before {
+  content: "•";
+  color: #4299e1;
+  font-weight: bold;
+  margin-right: 0.75rem;
+}
+
+.no-explanations {
   text-align: center;
   color: #718096;
-  padding: 2rem;
+  font-size: 1rem;
+  padding: 1rem 0;
+}
+
+.notes-section {
+  padding: 0 2rem 1rem;
+}
+
+.person-notes {
+  margin: 0;
+  padding: 1rem;
+  background: #f7fafc;
+  border-radius: 8px;
+  color: #4a5568;
+  font-size: 0.95rem;
+  font-style: italic;
+}
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem 2rem 2rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-action {
+  flex: 1;
+  min-width: 100px;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+.btn-action:hover {
+  background: #cbd5e0;
+}
+
+.btn-action.btn-set-me {
+  background: #48bb78;
+  color: white;
+}
+
+.btn-action.btn-set-me:hover {
+  background: #38a169;
+}
+
+.btn-action.btn-danger {
+  background: #fc8181;
+  color: white;
+}
+
+.btn-action.btn-danger:hover {
+  background: #f56565;
+}
+
+@media (max-width: 500px) {
+  .detail-actions {
+    flex-direction: column;
+  }
+
+  .btn-action {
+    width: 100%;
+  }
 }

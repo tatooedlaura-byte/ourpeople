@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { EngineProvider, useEngine, useAddPerson, usePersonWithRelations, useDataOperations } from './hooks/useEngine';
+import { EngineProvider, useEngine, useAddPerson, useDataOperations } from './hooks/useEngine';
 import { PersonCard, PersonForm, PersonDetail } from './components';
 import type { Person } from './types';
 import './App.css';
 
 function AppContent() {
-  const { isLoading, error, people } = useEngine();
+  const { isLoading, error, people, user } = useEngine();
   const addPerson = useAddPerson();
   const { exportData, importData } = useDataOperations();
 
@@ -13,13 +13,13 @@ function AppContent() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const selectedPerson = usePersonWithRelations(selectedPersonId);
+  const selectedPerson = people.find(p => p.id === selectedPersonId);
 
   if (isLoading) {
     return (
       <div className="loading">
         <div className="spinner"></div>
-        <p>Loading your family tree...</p>
+        <p>Loading...</p>
       </div>
     );
   }
@@ -78,28 +78,21 @@ function AppContent() {
     input.click();
   };
 
-  const filteredPeople = people.filter(person => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      person.firstName.toLowerCase().includes(query) ||
-      person.lastName.toLowerCase().includes(query) ||
-      person.nickname?.toLowerCase().includes(query)
-    );
-  });
+  // Filter and sort people alphabetically
+  const filteredPeople = people
+    .filter(person => {
+      if (!searchQuery) return true;
+      return person.name.toLowerCase().includes(searchQuery.toLowerCase());
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-  // Sort by last name, then first name
-  filteredPeople.sort((a, b) => {
-    const lastNameCompare = a.lastName.localeCompare(b.lastName);
-    if (lastNameCompare !== 0) return lastNameCompare;
-    return a.firstName.localeCompare(b.firstName);
-  });
+  const isFirstPerson = people.length === 0;
 
   return (
     <div className="app">
       <header className="app-header">
         <h1>Our People</h1>
-        <p className="tagline">Your private family tree</p>
+        {user && <p className="user-indicator">Viewing as: {user.name}</p>}
       </header>
 
       <main className="app-main">
@@ -107,7 +100,7 @@ function AppContent() {
           <div className="sidebar-header">
             <input
               type="search"
-              placeholder="Search people..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="search-input"
@@ -123,10 +116,10 @@ function AppContent() {
                 {people.length === 0 ? (
                   <>
                     <p>No people yet</p>
-                    <p className="hint">Add your first family member to get started</p>
+                    <p className="hint">Add yourself first to get started!</p>
                   </>
                 ) : (
-                  <p>No matches found</p>
+                  <p>No matches</p>
                 )}
               </div>
             ) : (
@@ -135,6 +128,7 @@ function AppContent() {
                   key={person.id}
                   person={person}
                   isSelected={person.id === selectedPersonId}
+                  showAsUser={person.isUser}
                   onClick={() => setSelectedPersonId(person.id)}
                 />
               ))
@@ -142,8 +136,8 @@ function AppContent() {
           </div>
 
           <div className="sidebar-footer">
-            <button className="btn-text" onClick={handleExport}>Export Backup</button>
-            <button className="btn-text" onClick={handleImport}>Import Backup</button>
+            <button className="btn-text" onClick={handleExport}>Export</button>
+            <button className="btn-text" onClick={handleImport}>Import</button>
           </div>
         </aside>
 
@@ -152,31 +146,36 @@ function AppContent() {
             <PersonForm
               onSubmit={handleAddPerson}
               onCancel={() => setShowAddForm(false)}
+              isFirstPerson={isFirstPerson}
             />
           ) : selectedPerson ? (
             <PersonDetail
-              personWithRelations={selectedPerson}
-              onPersonClick={setSelectedPersonId}
+              person={selectedPerson}
               onClose={() => setSelectedPersonId(null)}
             />
           ) : (
             <div className="welcome">
-              <h2>Welcome to Our People</h2>
-              <p>Select a person from the list or add someone new to begin building your family tree.</p>
-              <div className="features">
-                <div className="feature">
-                  <strong>Private</strong>
-                  <span>All data stays on your device</span>
+              <h2>Our People</h2>
+              <p>
+                A simple way to remember how everyone in your life is connected.
+              </p>
+              <div className="how-it-works">
+                <div className="step">
+                  <span className="step-number">1</span>
+                  <span>Add people with just their name</span>
                 </div>
-                <div className="feature">
-                  <strong>Offline</strong>
-                  <span>Works without internet</span>
+                <div className="step">
+                  <span className="step-number">2</span>
+                  <span>Define simple relationships (parent, child, sibling, spouse, friend)</span>
                 </div>
-                <div className="feature">
-                  <strong>Portable</strong>
-                  <span>Export and import your data anytime</span>
+                <div className="step">
+                  <span className="step-number">3</span>
+                  <span>Tap anyone to see who they are in plain language</span>
                 </div>
               </div>
+              <p className="tagline">
+                No charts. No genealogy. Just clear explanations.
+              </p>
             </div>
           )}
         </section>

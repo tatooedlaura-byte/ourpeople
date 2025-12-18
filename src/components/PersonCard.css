@@ -20,13 +20,18 @@
   background: #ebf8ff;
 }
 
+.person-card.is-user {
+  border-color: #48bb78;
+  background: #f0fff4;
+}
+
 .person-avatar {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  background: #e2e8f0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -41,18 +46,21 @@
 .avatar-placeholder {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #4a5568;
+  color: white;
   text-transform: uppercase;
 }
 
 .person-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .person-name {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #1a202c;
   white-space: nowrap;
@@ -60,14 +68,13 @@
   text-overflow: ellipsis;
 }
 
-.person-age {
-  margin: 0.25rem 0 0;
-  font-size: 0.9rem;
-  color: #4a5568;
-}
-
-.person-dates {
-  margin: 0.25rem 0 0;
-  font-size: 0.8rem;
-  color: #718096;
+.you-badge {
+  background: #48bb78;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }

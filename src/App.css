@@ -39,6 +39,12 @@ body {
   font-size: 1rem;
 }
 
+.user-indicator {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
 .app-main {
   display: flex;
   flex: 1;
@@ -185,6 +191,43 @@ body {
 .feature span {
   color: #718096;
   font-size: 0.85rem;
+}
+
+.how-it-works {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 2rem 0;
+  text-align: left;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.welcome .tagline {
+  margin-top: 2rem;
+  color: #4299e1;
+  font-style: italic;
 }
 
 .loading {

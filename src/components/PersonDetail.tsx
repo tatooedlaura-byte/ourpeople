@@ -1,25 +1,23 @@
 import { useState } from 'react';
-import type { Person, PersonWithRelations } from '../types';
-import { PersonCard } from './PersonCard';
+import type { Person } from '../types';
 import { PersonForm } from './PersonForm';
 import { RelationshipForm } from './RelationshipForm';
-import { useUpdatePerson, useDeletePerson } from '../hooks/useEngine';
+import { useUpdatePerson, useDeletePerson, useExplanations, useSetUser } from '../hooks/useEngine';
 import './PersonDetail.css';
 
 interface PersonDetailProps {
-  personWithRelations: PersonWithRelations;
-  onPersonClick: (id: string) => void;
+  person: Person;
   onClose: () => void;
 }
 
-export function PersonDetail({ personWithRelations, onPersonClick, onClose }: PersonDetailProps) {
+export function PersonDetail({ person, onClose }: PersonDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showAddRelationship, setShowAddRelationship] = useState(false);
 
   const updatePerson = useUpdatePerson();
   const deletePerson = useDeletePerson();
-
-  const { parents, children, spouses, siblings, partners, ...person } = personWithRelations;
+  const setUser = useSetUser();
+  const explanationData = useExplanations(person.id);
 
   const handleUpdate = async (data: Omit<Person, 'id' | 'createdAt' | 'updatedAt'>) => {
     await updatePerson(person.id, data);
@@ -27,10 +25,14 @@ export function PersonDetail({ personWithRelations, onPersonClick, onClose }: Pe
   };
 
   const handleDelete = async () => {
-    if (confirm(`Are you sure you want to delete ${person.firstName} ${person.lastName}? This will also remove all their relationships.`)) {
+    if (confirm(`Are you sure you want to remove ${person.name}? This will also remove all their relationships.`)) {
       await deletePerson(person.id);
       onClose();
     }
+  };
+
+  const handleSetAsMe = async () => {
+    await setUser(person.id);
   };
 
   if (isEditing) {
@@ -56,125 +58,68 @@ export function PersonDetail({ personWithRelations, onPersonClick, onClose }: Pe
     );
   }
 
-  const displayName = person.nickname
-    ? `${person.firstName} "${person.nickname}" ${person.lastName}`
-    : `${person.firstName} ${person.lastName}`;
-
   return (
     <div className="person-detail">
+      <button className="close-btn" onClick={onClose}>&times;</button>
+
       <div className="detail-header">
-        <button className="close-btn" onClick={onClose}>&times;</button>
         <div className="detail-avatar">
           {person.photo ? (
-            <img src={person.photo} alt={displayName} />
+            <img src={person.photo} alt={person.name} />
           ) : (
             <span className="avatar-placeholder-large">
-              {person.firstName[0]}{person.lastName[0]}
+              {person.name.charAt(0).toUpperCase()}
             </span>
           )}
         </div>
-        <h1>{displayName}</h1>
-        {person.birthDate && (
-          <p className="dates">
-            {formatDate(person.birthDate)}
-            {person.deathDate && ` - ${formatDate(person.deathDate)}`}
+
+        <h1 className="detail-name">
+          {explanationData?.displayName || person.name}
+        </h1>
+
+        {person.isUser && (
+          <span className="you-badge-large">This is you</span>
+        )}
+      </div>
+
+      <div className="explanations-section">
+        {explanationData && explanationData.explanations.length > 0 ? (
+          <ul className="explanations-list">
+            {explanationData.explanations.map((explanation, index) => (
+              <li key={index} className="explanation-item">
+                {explanation}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="no-explanations">
+            Add relationships to see how {person.name} is connected to your family.
           </p>
         )}
-        {person.notes && <p className="notes">{person.notes}</p>}
+      </div>
 
-        <div className="detail-actions">
-          <button className="btn-secondary" onClick={() => setIsEditing(true)}>
-            Edit
-          </button>
-          <button className="btn-secondary" onClick={() => setShowAddRelationship(true)}>
-            Add Relationship
-          </button>
-          <button className="btn-danger" onClick={handleDelete}>
-            Delete
-          </button>
+      {person.notes && (
+        <div className="notes-section">
+          <p className="person-notes">{person.notes}</p>
         </div>
-      </div>
+      )}
 
-      <div className="relationships-section">
-        {parents.length > 0 && (
-          <RelationshipGroup
-            title="Parents"
-            people={parents}
-            onPersonClick={onPersonClick}
-          />
+      <div className="detail-actions">
+        <button className="btn-action" onClick={() => setShowAddRelationship(true)}>
+          Add Relationship
+        </button>
+        <button className="btn-action" onClick={() => setIsEditing(true)}>
+          Edit
+        </button>
+        {!person.isUser && (
+          <button className="btn-action btn-set-me" onClick={handleSetAsMe}>
+            Set as Me
+          </button>
         )}
-
-        {siblings.length > 0 && (
-          <RelationshipGroup
-            title="Siblings"
-            people={siblings}
-            onPersonClick={onPersonClick}
-          />
-        )}
-
-        {spouses.length > 0 && (
-          <RelationshipGroup
-            title="Spouse"
-            people={spouses}
-            onPersonClick={onPersonClick}
-          />
-        )}
-
-        {partners.length > 0 && (
-          <RelationshipGroup
-            title="Partner"
-            people={partners}
-            onPersonClick={onPersonClick}
-          />
-        )}
-
-        {children.length > 0 && (
-          <RelationshipGroup
-            title="Children"
-            people={children}
-            onPersonClick={onPersonClick}
-          />
-        )}
-
-        {parents.length === 0 && siblings.length === 0 && spouses.length === 0 &&
-         partners.length === 0 && children.length === 0 && (
-          <p className="no-relationships">
-            No relationships added yet. Click "Add Relationship" to connect this person to others.
-          </p>
-        )}
+        <button className="btn-action btn-danger" onClick={handleDelete}>
+          Remove
+        </button>
       </div>
     </div>
   );
-}
-
-interface RelationshipGroupProps {
-  title: string;
-  people: Person[];
-  onPersonClick: (id: string) => void;
-}
-
-function RelationshipGroup({ title, people, onPersonClick }: RelationshipGroupProps) {
-  return (
-    <div className="relationship-group">
-      <h3>{title}</h3>
-      <div className="relationship-cards">
-        {people.map(person => (
-          <PersonCard
-            key={person.id}
-            person={person}
-            onClick={() => onPersonClick(person.id)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
 }

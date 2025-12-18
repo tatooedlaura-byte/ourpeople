@@ -56,7 +56,32 @@
 
 .form-group textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 60px;
+}
+
+.form-hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: #718096;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+}
+
+.checkbox-group span {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #2d3748;
 }
 
 .form-actions {

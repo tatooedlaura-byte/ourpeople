@@ -1,29 +1,47 @@
 /**
- * RelationshipEngine - Platform-agnostic relationship calculation engine
+ * Our People - Relationship Engine
  *
- * This module handles all relationship logic including:
- * - Computing relationship paths between people
- * - Generating plain-language relationship descriptions
- * - Managing the relationship graph
+ * This is NOT a genealogy engine. It generates plain-language explanations.
  *
- * This module has NO dependencies on React, DOM, or any UI framework.
+ * Core question: "Who is this person, explained using people I already know?"
+ *
+ * Users input only 5 relationship types. Everything else is derived.
  */
 
-import type { Person, Relationship, RelationshipType, RelationshipPath, PersonWithRelations, StorageAdapter } from '../types';
+import type {
+  Person,
+  Relationship,
+  RelationshipType,
+  Explanation,
+  PersonExplanation,
+  StorageAdapter,
+} from '../types';
+import { DERIVED_LABELS, ENGINE_CONFIG } from '../types';
+
+// =============================================================================
+// RELATIONSHIP ENGINE
+// =============================================================================
 
 export class RelationshipEngine {
   private storage: StorageAdapter;
   private peopleCache: Map<string, Person> = new Map();
   private relationshipsCache: Map<string, Relationship> = new Map();
-  private adjacencyList: Map<string, Array<{ personId: string; type: RelationshipType; relationshipId: string }>> = new Map();
+
+  // Adjacency list: personId -> [{ personId, type, direction }]
+  private adjacencyList: Map<string, Array<{
+    personId: string;
+    type: RelationshipType;
+    relationshipId: string;
+  }>> = new Map();
 
   constructor(storage: StorageAdapter) {
     this.storage = storage;
   }
 
-  /**
-   * Load all data from storage into memory for fast graph operations
-   */
+  // ===========================================================================
+  // INITIALIZATION
+  // ===========================================================================
+
   async initialize(): Promise<void> {
     const [people, relationships] = await Promise.all([
       this.storage.getAllPeople(),
@@ -49,7 +67,10 @@ export class RelationshipEngine {
     const listA = this.adjacencyList.get(rel.personAId) || [];
     const listB = this.adjacencyList.get(rel.personBId) || [];
 
+    // A -> B with the stated type
     listA.push({ personId: rel.personBId, type: rel.type, relationshipId: rel.id });
+
+    // B -> A with the inverse type
     listB.push({ personId: rel.personAId, type: this.getInverseType(rel.type), relationshipId: rel.id });
 
     this.adjacencyList.set(rel.personAId, listA);
@@ -60,13 +81,15 @@ export class RelationshipEngine {
     switch (type) {
       case 'parent': return 'child';
       case 'child': return 'parent';
-      case 'spouse': return 'spouse';
       case 'sibling': return 'sibling';
-      case 'partner': return 'partner';
+      case 'spouse': return 'spouse';
+      case 'friend': return 'friend';
     }
   }
 
-  // ==================== Person Operations ====================
+  // ===========================================================================
+  // PERSON OPERATIONS
+  // ===========================================================================
 
   async addPerson(person: Omit<Person, 'id' | 'createdAt' | 'updatedAt'>): Promise<Person> {
     const now = new Date().toISOString();
@@ -129,19 +152,35 @@ export class RelationshipEngine {
     return Array.from(this.peopleCache.values());
   }
 
-  // ==================== Relationship Operations ====================
+  getUser(): Person | undefined {
+    return Array.from(this.peopleCache.values()).find(p => p.isUser);
+  }
+
+  async setUser(id: string): Promise<void> {
+    // Clear existing user flag
+    for (const person of this.peopleCache.values()) {
+      if (person.isUser && person.id !== id) {
+        await this.updatePerson(person.id, { isUser: false });
+      }
+    }
+    // Set new user
+    await this.updatePerson(id, { isUser: true });
+  }
+
+  // ===========================================================================
+  // RELATIONSHIP OPERATIONS
+  // ===========================================================================
 
   async addRelationship(
     personAId: string,
     personBId: string,
-    type: RelationshipType,
-    options?: { startDate?: string; endDate?: string; notes?: string }
+    type: RelationshipType
   ): Promise<Relationship | undefined> {
     if (!this.peopleCache.has(personAId) || !this.peopleCache.has(personBId)) {
       return undefined;
     }
 
-    // Check for duplicate relationship
+    // Check for duplicate
     const existingRels = this.adjacencyList.get(personAId) || [];
     const duplicate = existingRels.find(r => r.personId === personBId && r.type === type);
     if (duplicate) return this.relationshipsCache.get(duplicate.relationshipId);
@@ -152,9 +191,6 @@ export class RelationshipEngine {
       personAId,
       personBId,
       type,
-      startDate: options?.startDate,
-      endDate: options?.endDate,
-      notes: options?.notes,
       createdAt: now,
       updatedAt: now
     };
@@ -162,11 +198,6 @@ export class RelationshipEngine {
     await this.storage.saveRelationship(relationship);
     this.relationshipsCache.set(relationship.id, relationship);
     this.addToAdjacencyList(relationship);
-
-    // Auto-create inverse sibling relationships
-    if (type === 'sibling') {
-      await this.addRelationship(personBId, personAId, 'sibling');
-    }
 
     return relationship;
   }
@@ -193,159 +224,303 @@ export class RelationshipEngine {
     }
   }
 
-  // ==================== Person with Relations ====================
-
-  getPersonWithRelations(id: string): PersonWithRelations | undefined {
-    const person = this.peopleCache.get(id);
-    if (!person) return undefined;
-
-    const relations = this.adjacencyList.get(id) || [];
-
-    const parents: Person[] = [];
-    const children: Person[] = [];
-    const spouses: Person[] = [];
-    const siblings: Person[] = [];
-    const partners: Person[] = [];
-
-    for (const rel of relations) {
-      const relatedPerson = this.peopleCache.get(rel.personId);
-      if (!relatedPerson) continue;
-
-      switch (rel.type) {
-        case 'parent':
-          parents.push(relatedPerson);
-          break;
-        case 'child':
-          children.push(relatedPerson);
-          break;
-        case 'spouse':
-          spouses.push(relatedPerson);
-          break;
-        case 'sibling':
-          siblings.push(relatedPerson);
-          break;
-        case 'partner':
-          partners.push(relatedPerson);
-          break;
-      }
-    }
-
-    return {
-      ...person,
-      parents,
-      children,
-      spouses,
-      siblings,
-      partners
-    };
+  getDirectRelationships(personId: string): Array<{ person: Person; type: RelationshipType }> {
+    const edges = this.adjacencyList.get(personId) || [];
+    return edges
+      .map(edge => ({
+        person: this.peopleCache.get(edge.personId)!,
+        type: edge.type
+      }))
+      .filter(r => r.person);
   }
 
-  // ==================== Relationship Path Finding ====================
+  // ===========================================================================
+  // PATH FINDING
+  // ===========================================================================
 
   /**
-   * Find the relationship path between two people using BFS
+   * Find the shortest path between two people
    */
-  findRelationshipPath(fromId: string, toId: string): RelationshipPath | undefined {
+  private findShortestPath(
+    fromId: string,
+    toId: string
+  ): { personIds: string[]; types: RelationshipType[] } | undefined {
     if (fromId === toId) {
-      const person = this.peopleCache.get(fromId);
-      return person ? {
-        fromPersonId: fromId,
-        toPersonId: toId,
-        path: [fromId],
-        relationshipChain: [],
-        description: 'self'
-      } : undefined;
+      return { personIds: [fromId], types: [] };
     }
 
-    // BFS to find shortest path
-    const visited = new Set<string>();
+    // BFS for shortest path
     const queue: Array<{ personId: string; path: string[]; types: RelationshipType[] }> = [];
+    const visited = new Set<string>();
 
     queue.push({ personId: fromId, path: [fromId], types: [] });
     visited.add(fromId);
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-      const neighbors = this.adjacencyList.get(current.personId) || [];
 
-      for (const neighbor of neighbors) {
-        if (visited.has(neighbor.personId)) continue;
+      if (current.types.length >= ENGINE_CONFIG.MAX_TRAVERSAL_DEPTH) continue;
 
-        const newPath = [...current.path, neighbor.personId];
-        const newTypes = [...current.types, neighbor.type];
+      const edges = this.adjacencyList.get(current.personId) || [];
 
-        if (neighbor.personId === toId) {
-          return {
-            fromPersonId: fromId,
-            toPersonId: toId,
-            path: newPath,
-            relationshipChain: newTypes,
-            description: this.describeRelationship(newTypes, fromId, toId)
-          };
+      for (const edge of edges) {
+        if (visited.has(edge.personId)) continue;
+
+        // Friends are terminal
+        if (ENGINE_CONFIG.TERMINAL_TYPES.includes(edge.type) && edge.personId !== toId) {
+          continue;
         }
 
-        visited.add(neighbor.personId);
-        queue.push({ personId: neighbor.personId, path: newPath, types: newTypes });
+        const newPath = [...current.path, edge.personId];
+        const newTypes = [...current.types, edge.type];
+
+        if (edge.personId === toId) {
+          return { personIds: newPath, types: newTypes };
+        }
+
+        visited.add(edge.personId);
+        queue.push({ personId: edge.personId, path: newPath, types: newTypes });
       }
     }
 
     return undefined;
   }
 
+  // ===========================================================================
+  // LABEL GENERATION
+  // ===========================================================================
+
   /**
-   * Generate a plain-English description of a relationship chain
+   * Get a human-readable label for a path (e.g., "aunt", "grandpa")
    */
-  private describeRelationship(chain: RelationshipType[], _fromId: string, toId: string): string {
-    const toPerson = this.peopleCache.get(toId);
-    const toName = toPerson ? toPerson.firstName : 'them';
+  private getLabelForPath(types: RelationshipType[], targetGender?: 'male' | 'female'): string | null {
+    const key = types.join('.');
+    const entry = DERIVED_LABELS[key];
 
-    if (chain.length === 0) return 'self';
+    if (!entry) return null;
 
-    if (chain.length === 1) {
-      return this.describeDirect(chain[0], toName);
+    if (targetGender && entry.gendered) {
+      return targetGender === 'female' ? entry.gendered[0] : entry.gendered[1];
     }
 
-    // Handle common compound relationships
-    const key = chain.join('-');
-
-    // Parent's parent = grandparent
-    if (key === 'parent-parent') return `${toName} is your grandparent`;
-    if (key === 'child-child') return `${toName} is your grandchild`;
-    if (key === 'parent-parent-parent') return `${toName} is your great-grandparent`;
-    if (key === 'child-child-child') return `${toName} is your great-grandchild`;
-
-    // Parent's sibling = aunt/uncle
-    if (key === 'parent-sibling') return `${toName} is your aunt/uncle`;
-    if (key === 'sibling-child') return `${toName} is your niece/nephew`;
-
-    // Sibling's child = niece/nephew
-    // Parent's sibling's child = cousin
-    if (key === 'parent-sibling-child') return `${toName} is your cousin`;
-
-    // Spouse relationships
-    if (key === 'spouse-parent') return `${toName} is your parent-in-law`;
-    if (key === 'spouse-sibling') return `${toName} is your sibling-in-law`;
-    if (key === 'sibling-spouse') return `${toName} is your sibling-in-law`;
-
-    // Step relationships
-    if (key === 'parent-spouse') return `${toName} is your step-parent`;
-    if (key === 'parent-spouse-child') return `${toName} is your step-sibling`;
-
-    // Fallback: describe the chain
-    return `${toName} is ${chain.length} relationship steps away`;
+    return entry.label;
   }
 
-  private describeDirect(type: RelationshipType, name: string): string {
-    switch (type) {
-      case 'parent': return `${name} is your parent`;
-      case 'child': return `${name} is your child`;
-      case 'spouse': return `${name} is your spouse`;
-      case 'sibling': return `${name} is your sibling`;
-      case 'partner': return `${name} is your partner`;
+  /**
+   * Get the relationship word for a single hop
+   */
+  private getRelationshipWord(type: RelationshipType, gender?: 'male' | 'female'): string {
+    const entry = DERIVED_LABELS[type];
+    if (entry && gender && entry.gendered) {
+      return gender === 'female' ? entry.gendered[0] : entry.gendered[1];
     }
+    return type;
   }
 
-  // ==================== Data Export/Import ====================
+  /**
+   * Generate a derived display name like "Aunt Betty" or "Grandpa Joe"
+   */
+  getDisplayName(personId: string): string {
+    const person = this.peopleCache.get(personId);
+    if (!person) return 'Unknown';
+
+    const user = this.getUser();
+    if (!user || user.id === personId) return person.name;
+
+    const path = this.findShortestPath(user.id, personId);
+    if (!path || path.types.length === 0) return person.name;
+
+    const label = this.getLabelForPath(path.types, person.gender);
+
+    // Add title prefix for certain relationships
+    if (label && ['aunt', 'uncle', 'grandma', 'grandpa', 'great-grandma', 'great-grandpa', 'cousin'].includes(label)) {
+      // Capitalize first letter
+      const title = label.charAt(0).toUpperCase() + label.slice(1);
+      return `${title} ${person.name}`;
+    }
+
+    return person.name;
+  }
+
+  // ===========================================================================
+  // EXPLANATION GENERATION - The core feature!
+  // ===========================================================================
+
+  /**
+   * Generate plain-language explanations for a person
+   * This is the main feature of the app.
+   */
+  getExplanations(personId: string): PersonExplanation {
+    const person = this.peopleCache.get(personId);
+    if (!person) {
+      return { personId, displayName: 'Unknown', explanations: [] };
+    }
+
+    const user = this.getUser();
+    const explanations: Explanation[] = [];
+
+    // If this IS the user
+    if (person.isUser) {
+      return {
+        personId,
+        displayName: person.name,
+        explanations: ['is you!']
+      };
+    }
+
+    // === Generate explanations from user's perspective ===
+    if (user) {
+      const pathFromUser = this.findShortestPath(user.id, personId);
+
+      if (pathFromUser && pathFromUser.types.length > 0) {
+        // Try to get a direct label ("is your aunt")
+        const label = this.getLabelForPath(pathFromUser.types, person.gender);
+        if (label) {
+          explanations.push({
+            sentence: `is your ${label}`,
+            clarity: 100
+          });
+        }
+
+        // Generate path explanation ("is your mom's sister")
+        const pathExplanation = this.describePathThrough(pathFromUser, 'your');
+        if (pathExplanation && pathExplanation !== `is your ${label}`) {
+          explanations.push({
+            sentence: pathExplanation,
+            clarity: 90
+          });
+        }
+      }
+
+      // === Generate explanations through well-known people ===
+      const wellKnown = this.getWellKnownPeople(user.id);
+
+      for (const knownPerson of wellKnown) {
+        if (knownPerson.id === personId) continue;
+
+        const pathFromKnown = this.findShortestPath(knownPerson.id, personId);
+        if (!pathFromKnown || pathFromKnown.types.length === 0 || pathFromKnown.types.length > 2) {
+          continue;
+        }
+
+        const explanation = this.describePathThrough(pathFromKnown, `${knownPerson.name}'s`);
+        if (explanation) {
+          // Avoid duplicates
+          const isDuplicate = explanations.some(e => e.sentence === explanation);
+          if (!isDuplicate) {
+            explanations.push({
+              sentence: explanation,
+              clarity: 70 - pathFromKnown.types.length * 10
+            });
+          }
+        }
+      }
+    }
+
+    // If no user set, just show direct relationships
+    if (explanations.length === 0) {
+      const direct = this.getDirectRelationships(personId);
+      for (const rel of direct.slice(0, 3)) {
+        const word = this.getRelationshipWord(rel.type, rel.person.gender);
+        explanations.push({
+          sentence: `is ${rel.person.name}'s ${word}`,
+          clarity: 50
+        });
+      }
+    }
+
+    // Sort by clarity and limit
+    const sorted = explanations
+      .sort((a, b) => b.clarity - a.clarity)
+      .slice(0, ENGINE_CONFIG.MAX_EXPLANATIONS);
+
+    return {
+      personId,
+      displayName: this.getDisplayName(personId),
+      explanations: sorted.map(e => e.sentence)
+    };
+  }
+
+  /**
+   * Describe a path through relationships
+   * e.g., "is your mom's sister"
+   */
+  private describePathThrough(
+    path: { personIds: string[]; types: RelationshipType[] },
+    startLabel: string
+  ): string | null {
+    if (path.types.length === 0) return null;
+
+    if (path.types.length === 1) {
+      const targetPerson = this.peopleCache.get(path.personIds[path.personIds.length - 1]);
+      const word = this.getRelationshipWord(path.types[0], targetPerson?.gender);
+      return `is ${startLabel} ${word}`;
+    }
+
+    if (path.types.length === 2) {
+      const middlePerson = this.peopleCache.get(path.personIds[1]);
+      const targetPerson = this.peopleCache.get(path.personIds[2]);
+
+      if (!middlePerson) return null;
+
+      const firstWord = this.getRelationshipWord(path.types[0], middlePerson.gender);
+      const secondWord = this.getRelationshipWord(path.types[1], targetPerson?.gender);
+
+      return `is ${startLabel} ${firstWord}'s ${secondWord}`;
+    }
+
+    if (path.types.length === 3) {
+      // For 3-hop paths, try to use a label if we have one
+      const targetPerson = this.peopleCache.get(path.personIds[path.personIds.length - 1]);
+      const label = this.getLabelForPath(path.types, targetPerson?.gender);
+
+      if (label) {
+        return `is ${startLabel} ${label}`;
+      }
+
+      // Fallback: "connected through [middle person]"
+      const middlePerson = this.peopleCache.get(path.personIds[1]);
+      if (middlePerson) {
+        return `is connected through ${middlePerson.name}`;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Get "well-known" people relative to the user
+   * These are people we can use as reference points in explanations
+   */
+  private getWellKnownPeople(userId: string): Person[] {
+    const wellKnown: Person[] = [];
+    const edges = this.adjacencyList.get(userId) || [];
+
+    for (const edge of edges) {
+      const person = this.peopleCache.get(edge.personId);
+      if (!person) continue;
+
+      // Parents, siblings, spouse, children are well-known
+      if (['parent', 'sibling', 'spouse', 'child'].includes(edge.type)) {
+        wellKnown.push(person);
+      }
+    }
+
+    // Also include grandparents
+    for (const parentEdge of edges.filter(e => e.type === 'parent')) {
+      const parentEdges = this.adjacencyList.get(parentEdge.personId) || [];
+      for (const gpEdge of parentEdges.filter(e => e.type === 'parent')) {
+        const gp = this.peopleCache.get(gpEdge.personId);
+        if (gp) wellKnown.push(gp);
+      }
+    }
+
+    return wellKnown;
+  }
+
+  // ===========================================================================
+  // DATA EXPORT/IMPORT
+  // ===========================================================================
 
   async exportData(): Promise<{ people: Person[]; relationships: Relationship[] }> {
     return this.storage.exportData();
