@@ -546,6 +546,15 @@ export class RelationshipEngine {
       }
     }
 
+    // Also include children's spouses (son/daughter-in-law)
+    for (const childEdge of edges.filter(e => e.type === 'child')) {
+      const childEdges = this.adjacencyList.get(childEdge.personId) || [];
+      for (const spouseEdge of childEdges.filter(e => e.type === 'spouse')) {
+        const inLaw = this.peopleCache.get(spouseEdge.personId);
+        if (inLaw) wellKnown.push(inLaw);
+      }
+    }
+
     return wellKnown;
   }
 
