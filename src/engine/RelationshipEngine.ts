@@ -471,9 +471,16 @@ export class RelationshipEngine {
     }
 
     if (path.types.length === 2) {
-      const middlePerson = this.peopleCache.get(path.personIds[1]);
-      const targetPerson = this.peopleCache.get(path.personIds[2]);
+      const targetPerson = this.peopleCache.get(path.personIds[path.personIds.length - 1]);
 
+      // Try to get a simple label (e.g., "grandma" instead of "dad's mom")
+      const label = this.getLabelForPath(path.types, targetPerson?.gender);
+      if (label) {
+        return `is ${startLabel} ${label}`;
+      }
+
+      // Fallback to the verbose form
+      const middlePerson = this.peopleCache.get(path.personIds[1]);
       if (!middlePerson) return null;
 
       const firstWord = this.getRelationshipWord(path.types[0], middlePerson.gender);
