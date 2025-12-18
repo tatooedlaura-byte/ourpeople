@@ -380,23 +380,31 @@ export class RelationshipEngine {
             sentence: `is your ${label}`,
             clarity: 100
           });
-        }
-
-        // Generate path explanation ("is your mom's sister")
-        const pathExplanation = this.describePathThrough(pathFromUser, 'your');
-        if (pathExplanation && pathExplanation !== `is your ${label}`) {
-          explanations.push({
-            sentence: pathExplanation,
-            clarity: 90
-          });
+        } else {
+          // Only show path explanation if we don't have a clean label
+          const pathExplanation = this.describePathThrough(pathFromUser, 'your');
+          if (pathExplanation) {
+            explanations.push({
+              sentence: pathExplanation,
+              clarity: 90
+            });
+          }
         }
       }
 
       // === Generate explanations through well-known people ===
+      // Only add these if they provide new context (not just restating the direct relationship)
       const wellKnown = this.getWellKnownPeople(user.id);
 
       for (const knownPerson of wellKnown) {
         if (knownPerson.id === personId) continue;
+
+        // Skip if this known person is in the direct path to the target
+        // (e.g., don't say "is Chris's mom" when we already said "is your mother-in-law"
+        // and Chris is your spouse)
+        if (pathFromUser && pathFromUser.personIds.includes(knownPerson.id)) {
+          continue;
+        }
 
         const pathFromKnown = this.findShortestPath(knownPerson.id, personId);
         if (!pathFromKnown || pathFromKnown.types.length === 0 || pathFromKnown.types.length > 2) {
