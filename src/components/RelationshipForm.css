@@ -1,0 +1,89 @@
+.relationship-form {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.relationship-form h2 {
+  margin: 0 0 1.5rem;
+  font-size: 1.5rem;
+  color: #1a202c;
+}
+
+.relationship-sentence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+}
+
+.relationship-sentence .person-name {
+  font-weight: 600;
+  color: #2d3748;
+  background: #e2e8f0;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+}
+
+.relationship-select,
+.person-select {
+  padding: 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: white;
+  cursor: pointer;
+}
+
+.relationship-select:focus,
+.person-select:focus {
+  outline: none;
+  border-color: #4299e1;
+}
+
+.person-select {
+  min-width: 200px;
+}
+
+.relationship-form .form-group {
+  margin-bottom: 1rem;
+}
+
+.relationship-form .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.relationship-form .form-group input {
+  padding: 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.relationship-form .form-group input:focus {
+  outline: none;
+  border-color: #4299e1;
+}
+
+.relationship-form .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.relationship-form .btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

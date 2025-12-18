@@ -1,0 +1,73 @@
+.person-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.person-card:hover {
+  border-color: #4a5568;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.person-card.selected {
+  border-color: #4299e1;
+  background: #ebf8ff;
+}
+
+.person-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.person-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+}
+
+.person-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.person-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a202c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.person-age {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.person-dates {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: #718096;
+}
