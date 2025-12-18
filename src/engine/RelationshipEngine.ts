@@ -411,15 +411,16 @@ export class RelationshipEngine {
           continue;
         }
 
-        // Skip if this path goes through the user AND circles back (e.g., "Evan's wife's dad" when you ARE the wife)
-        // But allow paths like "Abby's grandma" even if they go through you, because that's useful context
-        const pathGoesThruUser = pathFromKnown.personIds.slice(1, -1).includes(user.id); // Exclude start and end
-        const startsFromSpouse = this.getDirectRelationships(user.id)
-          .some(r => r.type === 'spouse' && r.person.id === knownPerson.id);
+        // Skip circular paths through spouse (e.g., "Chris's wife's dad" when you ARE the wife)
+        // But allow paths through children (e.g., "Abby's grandma") - those are useful context
+        const knownPersonRelation = this.getDirectRelationships(user.id)
+          .find(r => r.person.id === knownPerson.id);
 
-        if (pathGoesThruUser && startsFromSpouse) {
-          // This is a circular path like "spouse's wife's X" - skip it
-          continue;
+        if (knownPersonRelation?.type === 'spouse') {
+          // Any path from spouse that goes through you is circular - skip it
+          if (pathFromKnown.personIds.includes(user.id)) {
+            continue;
+          }
         }
 
         const explanation = this.describePathThrough(pathFromKnown, `${knownPerson.name}'s`);
