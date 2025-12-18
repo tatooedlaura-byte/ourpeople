@@ -399,11 +399,15 @@ export class RelationshipEngine {
       for (const knownPerson of wellKnown) {
         if (knownPerson.id === personId) continue;
 
-        // Skip if this known person is in the direct path to the target
-        // (e.g., don't say "is Chris's mom" when we already said "is your mother-in-law"
-        // and Chris is your spouse)
+        // Skip if this known person is your SPOUSE and is in the direct path to the target
+        // (e.g., don't say "is Chris's mom" when we already said "is your mother-in-law")
+        // But allow children in path - "is Abby's husband" is useful even if Abby is in the path
         if (pathFromUser && pathFromUser.personIds.includes(knownPerson.id)) {
-          continue;
+          const isSpouse = this.getDirectRelationships(user.id)
+            .some(r => r.type === 'spouse' && r.person.id === knownPerson.id);
+          if (isSpouse) {
+            continue;
+          }
         }
 
         const pathFromKnown = this.findShortestPath(knownPerson.id, personId);
