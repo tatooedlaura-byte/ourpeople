@@ -411,6 +411,11 @@ export class RelationshipEngine {
           continue;
         }
 
+        // Skip if this path goes through the user (e.g., "Evan's wife's dad" when you ARE the wife)
+        if (pathFromKnown.personIds.includes(user.id)) {
+          continue;
+        }
+
         const explanation = this.describePathThrough(pathFromKnown, `${knownPerson.name}'s`);
         if (explanation) {
           // Avoid duplicates
