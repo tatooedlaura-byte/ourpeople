@@ -130,6 +130,12 @@ body {
   border-color: #4299e1;
 }
 
+.sidebar-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .add-btn {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -145,6 +151,24 @@ body {
 
 .add-btn:hover {
   background: #3182ce;
+}
+
+.btn-map {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  background: transparent;
+  color: #667eea;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-map:hover {
+  background: #667eea;
+  color: white;
 }
 
 .people-list {

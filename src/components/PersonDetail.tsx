@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Person } from '../types';
 import { PersonForm } from './PersonForm';
 import { RelationshipForm } from './RelationshipForm';
+import { QuickAddFamily } from './QuickAddFamily';
 import { useUpdatePerson, useDeletePerson, useExplanations, useNametag, usePerspective } from '../hooks/useEngine';
 import './PersonDetail.css';
 
@@ -13,6 +14,7 @@ interface PersonDetailProps {
 export function PersonDetail({ person, onClose }: PersonDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showAddRelationship, setShowAddRelationship] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   const updatePerson = useUpdatePerson();
   const deletePerson = useDeletePerson();
@@ -56,6 +58,18 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
         <RelationshipForm
           person={person}
           onClose={() => setShowAddRelationship(false)}
+        />
+      </div>
+    );
+  }
+
+  if (showQuickAdd) {
+    return (
+      <div className="person-detail">
+        <QuickAddFamily
+          person={person}
+          onClose={() => setShowQuickAdd(false)}
+          onComplete={() => setShowQuickAdd(false)}
         />
       </div>
     );
@@ -124,6 +138,9 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
       )}
 
       <div className="detail-actions">
+        <button className="btn-action btn-quick-add" onClick={() => setShowQuickAdd(true)}>
+          + Add Family
+        </button>
         <button className="btn-action" onClick={() => setShowAddRelationship(true)}>
           Add Relationship
         </button>

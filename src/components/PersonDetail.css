@@ -193,6 +193,15 @@
   background: #cbd5e0;
 }
 
+.btn-action.btn-quick-add {
+  background: #667eea;
+  color: white;
+}
+
+.btn-action.btn-quick-add:hover {
+  background: #5a67d8;
+}
+
 .btn-action.btn-set-me {
   background: #48bb78;
   color: white;

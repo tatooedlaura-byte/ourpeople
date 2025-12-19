@@ -1,11 +1,18 @@
 import { useState, type FormEvent } from 'react';
 import type { Person, RelationshipType } from '../types';
-import { useEngine, useAddRelationship } from '../hooks/useEngine';
+import { useEngine, useAddPerson, useAddRelationship } from '../hooks/useEngine';
 import './RelationshipForm.css';
 
 interface RelationshipFormProps {
   person: Person;
   onClose: () => void;
+}
+
+interface Suggestion {
+  message: string;
+  action: string;
+  type: RelationshipType;
+  fromPerson: Person;
 }
 
 // Only these 5 types - everything else is derived!
@@ -19,12 +26,58 @@ const RELATIONSHIP_OPTIONS: { type: RelationshipType; label: string; description
 
 export function RelationshipForm({ person, onClose }: RelationshipFormProps) {
   const { people } = useEngine();
+  const addPerson = useAddPerson();
   const addRelationship = useAddRelationship();
 
   const [selectedPersonId, setSelectedPersonId] = useState('');
   const [relationshipType, setRelationshipType] = useState<RelationshipType>('parent');
 
+  // Suggestion state
+  const [showSuggestion, setShowSuggestion] = useState(false);
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
+  const [quickAddName, setQuickAddName] = useState('');
+  const [quickAddGender, setQuickAddGender] = useState<Person['gender']>();
+
   const otherPeople = people.filter(p => p.id !== person.id);
+
+  const generateSuggestion = (type: RelationshipType, targetPerson: Person): Suggestion | null => {
+    switch (type) {
+      case 'parent':
+        // Added a parent → suggest adding siblings
+        return {
+          message: `Does ${person.name} have any siblings?`,
+          action: `Add a sibling for ${person.name}`,
+          type: 'sibling',
+          fromPerson: person
+        };
+      case 'child':
+        // Added a child → suggest adding more children
+        return {
+          message: `Does ${person.name} have more children?`,
+          action: `Add another child for ${person.name}`,
+          type: 'child',
+          fromPerson: person
+        };
+      case 'spouse':
+        // Added a spouse → suggest adding children
+        return {
+          message: `Do ${person.name} and ${targetPerson.name} have children?`,
+          action: `Add a child`,
+          type: 'child',
+          fromPerson: person
+        };
+      case 'sibling':
+        // Added a sibling → suggest adding more siblings
+        return {
+          message: `Are there more siblings?`,
+          action: `Add another sibling`,
+          type: 'sibling',
+          fromPerson: person
+        };
+      default:
+        return null;
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -32,10 +85,119 @@ export function RelationshipForm({ person, onClose }: RelationshipFormProps) {
     if (!selectedPersonId) return;
 
     await addRelationship(person.id, selectedPersonId, relationshipType);
+
+    const targetPerson = people.find(p => p.id === selectedPersonId);
+    if (targetPerson) {
+      const newSuggestion = generateSuggestion(relationshipType, targetPerson);
+      if (newSuggestion) {
+        setSuggestion(newSuggestion);
+        setShowSuggestion(true);
+        setSelectedPersonId('');
+        return;
+      }
+    }
+
+    onClose();
+  };
+
+  const handleQuickAdd = async (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!quickAddName.trim() || !suggestion) return;
+
+    // Create the new person
+    const newPerson = await addPerson({
+      name: quickAddName.trim(),
+      gender: quickAddGender
+    });
+
+    if (newPerson) {
+      // Add the suggested relationship
+      await addRelationship(suggestion.fromPerson.id, newPerson.id, suggestion.type);
+
+      // Generate next suggestion
+      const nextSuggestion = generateSuggestion(suggestion.type, newPerson);
+      if (nextSuggestion) {
+        setSuggestion(nextSuggestion);
+        setQuickAddName('');
+        setQuickAddGender(undefined);
+        return;
+      }
+    }
+
     onClose();
   };
 
   const selectedOption = RELATIONSHIP_OPTIONS.find(o => o.type === relationshipType);
+
+  // Show suggestion view
+  if (showSuggestion && suggestion) {
+    return (
+      <div className="relationship-form">
+        <h2>Relationship Added!</h2>
+
+        <div className="suggestion-box">
+          <p className="suggestion-message">{suggestion.message}</p>
+
+          <form onSubmit={handleQuickAdd} className="quick-add-form">
+            <div className="quick-add-row">
+              <input
+                type="text"
+                placeholder="Name..."
+                value={quickAddName}
+                onChange={(e) => setQuickAddName(e.target.value)}
+                className="quick-add-input"
+                autoFocus
+              />
+              <select
+                value={quickAddGender || ''}
+                onChange={(e) => setQuickAddGender(e.target.value as Person['gender'] || undefined)}
+                className="quick-add-gender"
+              >
+                <option value="">Gender</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+              </select>
+              <button type="submit" className="btn-primary" disabled={!quickAddName.trim()}>
+                Add
+              </button>
+            </div>
+          </form>
+
+          <p className="suggestion-hint">
+            Or select an existing person:
+          </p>
+
+          <div className="existing-people">
+            {otherPeople.slice(0, 6).map(p => (
+              <button
+                key={p.id}
+                type="button"
+                className="existing-person-btn"
+                onClick={async () => {
+                  await addRelationship(suggestion.fromPerson.id, p.id, suggestion.type);
+                  const nextSuggestion = generateSuggestion(suggestion.type, p);
+                  if (nextSuggestion) {
+                    setSuggestion(nextSuggestion);
+                  } else {
+                    onClose();
+                  }
+                }}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="form-actions">
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Done
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form className="relationship-form" onSubmit={handleSubmit}>

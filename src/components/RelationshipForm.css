@@ -156,3 +156,95 @@
 .btn-secondary:hover {
   background: #cbd5e0;
 }
+
+/* Suggestion Box */
+.suggestion-box {
+  background: #f0fff4;
+  border: 2px solid #9ae6b4;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.suggestion-message {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  color: #276749;
+  font-weight: 500;
+}
+
+.quick-add-form {
+  margin-bottom: 1rem;
+}
+
+.quick-add-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.quick-add-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #9ae6b4;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.quick-add-input:focus {
+  outline: none;
+  border-color: #48bb78;
+}
+
+.quick-add-gender {
+  width: 100px;
+  padding: 0.75rem;
+  border: 2px solid #9ae6b4;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: white;
+}
+
+.suggestion-hint {
+  margin: 1rem 0 0.75rem;
+  font-size: 0.9rem;
+  color: #718096;
+}
+
+.existing-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.existing-person-btn {
+  padding: 0.5rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #4a5568;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.existing-person-btn:hover {
+  border-color: #4299e1;
+  background: #ebf8ff;
+  color: #2b6cb0;
+}
+
+@media (max-width: 500px) {
+  .quick-add-row {
+    flex-wrap: wrap;
+  }
+
+  .quick-add-input {
+    width: 100%;
+  }
+
+  .quick-add-gender {
+    flex: 1;
+  }
+}

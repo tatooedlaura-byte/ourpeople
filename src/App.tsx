@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { EngineProvider, useEngine, useAddPerson, useDataOperations, usePerspective } from './hooks/useEngine';
-import { PersonCard, PersonForm, PersonDetail } from './components';
+import { PersonCard, PersonForm, PersonDetail, FamilyMap } from './components';
 import type { Person } from './types';
 import './App.css';
 
@@ -12,6 +12,7 @@ function AppContent() {
 
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showFamilyMap, setShowFamilyMap] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const selectedPerson = people.find(p => p.id === selectedPersonId);
@@ -129,9 +130,16 @@ function AppContent() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="search-input"
             />
-            <button className="btn-primary add-btn" onClick={() => setShowAddForm(true)}>
-              + Add Person
-            </button>
+            <div className="sidebar-buttons">
+              <button className="btn-primary add-btn" onClick={() => setShowAddForm(true)}>
+                + Add Person
+              </button>
+              {people.length > 0 && (
+                <button className="btn-map" onClick={() => setShowFamilyMap(true)}>
+                  Family Map
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="people-list">
@@ -166,7 +174,15 @@ function AppContent() {
         </aside>
 
         <section className="content">
-          {showAddForm ? (
+          {showFamilyMap ? (
+            <FamilyMap
+              onSelectPerson={(id) => {
+                setSelectedPersonId(id);
+                setShowFamilyMap(false);
+              }}
+              onClose={() => setShowFamilyMap(false)}
+            />
+          ) : showAddForm ? (
             <PersonForm
               onSubmit={handleAddPerson}
               onCancel={() => setShowAddForm(false)}
