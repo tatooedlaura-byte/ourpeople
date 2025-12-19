@@ -171,6 +171,7 @@ function RelationshipSection({
 
 export function PersonDetail({ person, onClose }: PersonDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
 
   const { people } = useEngine();
   const updatePerson = useUpdatePerson();
@@ -233,6 +234,10 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
     }
 
     if (targetId) {
+      // Show saved indicator
+      setShowSaved(true);
+      setTimeout(() => setShowSaved(false), 2000);
+
       // Add relationship based on type
       // The relationship is stored as "person A [type] of person B"
       // So we need to handle the direction correctly
@@ -283,6 +288,8 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
 
   const handleRemoveRelationship = async (relationshipId: string) => {
     await deleteRelationship(relationshipId);
+    setShowSaved(true);
+    setTimeout(() => setShowSaved(false), 2000);
   };
 
   const handleSelectPerson = (personId: string) => {
@@ -307,7 +314,12 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
 
   return (
     <div className="person-detail">
-      <button className="close-btn" onClick={onClose}>&times;</button>
+      <div className="detail-top-bar">
+        {showSaved && (
+          <span className="saved-indicator">✓ Saved</span>
+        )}
+        <button className="done-btn" onClick={onClose}>Done</button>
+      </div>
 
       <div className="detail-header">
         <div className="detail-avatar">
