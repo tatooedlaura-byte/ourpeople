@@ -255,11 +255,13 @@ export class FamilyEngine {
 
   /**
    * Find the shortest path between two people using BFS
+   * If preferShortcuts is true, finds ALL shortest paths and returns the one with a known shortcut
    */
   private findShortestPath(
     fromId: string,
     toId: string,
-    maxDepth: number = 4
+    maxDepth: number = 4,
+    preferShortcuts: boolean = false
   ): { personIds: string[]; types: RelationshipType[] } | undefined {
     if (fromId === toId) {
       return { personIds: [fromId], types: [] };
@@ -267,6 +269,8 @@ export class FamilyEngine {
 
     const queue: Array<{ personId: string; path: string[]; types: RelationshipType[] }> = [];
     const visited = new Set<string>();
+    const allPaths: Array<{ personIds: string[]; types: RelationshipType[] }> = [];
+    let shortestLength = Infinity;
 
     queue.push({ personId: fromId, path: [fromId], types: [] });
     visited.add(fromId);
@@ -275,12 +279,11 @@ export class FamilyEngine {
       const current = queue.shift()!;
 
       if (current.types.length >= maxDepth) continue;
+      if (preferShortcuts && current.types.length > shortestLength) continue;
 
       const edges = this.adjacencyList.get(current.personId) || [];
 
       for (const edge of edges) {
-        if (visited.has(edge.personId)) continue;
-
         // Friends are terminal - don't traverse through them (except to reach them directly)
         if (edge.type === 'friend' && edge.personId !== toId) {
           continue;
@@ -290,12 +293,30 @@ export class FamilyEngine {
         const newTypes = [...current.types, edge.type];
 
         if (edge.personId === toId) {
-          return { personIds: newPath, types: newTypes };
+          if (preferShortcuts) {
+            shortestLength = newTypes.length;
+            allPaths.push({ personIds: newPath, types: newTypes });
+          } else {
+            return { personIds: newPath, types: newTypes };
+          }
         }
 
-        visited.add(edge.personId);
-        queue.push({ personId: edge.personId, path: newPath, types: newTypes });
+        if (!visited.has(edge.personId)) {
+          visited.add(edge.personId);
+          queue.push({ personId: edge.personId, path: newPath, types: newTypes });
+        }
       }
+    }
+
+    if (preferShortcuts && allPaths.length > 0) {
+      // Prefer paths with known shortcuts
+      for (const path of allPaths) {
+        if (this.getShortcutLabel(path.types)) {
+          return path;
+        }
+      }
+      // No shortcut found, return first path
+      return allPaths[0];
     }
 
     return undefined;
@@ -356,7 +377,8 @@ export class FamilyEngine {
 
     // Generate explanation from perspective
     if (perspective) {
-      const path = this.findShortestPath(perspective.id, personId);
+      // Use preferShortcuts=true to find paths that have known labels (aunt, uncle, etc.)
+      const path = this.findShortestPath(perspective.id, personId, 4, true);
 
       if (path && path.types.length > 0) {
         // Try shortcut label first
