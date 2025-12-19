@@ -212,27 +212,25 @@
   color: #718096;
 }
 
-.existing-people {
+.existing-person-select {
   display: flex;
-  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.existing-person-btn {
-  padding: 0.5rem 1rem;
-  border: 2px solid #e2e8f0;
+.existing-person-select select {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #9ae6b4;
   border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
   background: white;
-  color: #4a5568;
-  font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.existing-person-btn:hover {
-  border-color: #4299e1;
-  background: #ebf8ff;
-  color: #2b6cb0;
+.existing-person-select select:focus {
+  outline: none;
+  border-color: #48bb78;
 }
 
 @media (max-width: 500px) {

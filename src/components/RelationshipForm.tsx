@@ -37,6 +37,7 @@ export function RelationshipForm({ person, onClose }: RelationshipFormProps) {
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const [quickAddName, setQuickAddName] = useState('');
   const [quickAddGender, setQuickAddGender] = useState<Person['gender']>();
+  const [suggestionSelectedId, setSuggestionSelectedId] = useState('');
 
   const otherPeople = people.filter(p => p.id !== person.id);
 
@@ -128,6 +129,23 @@ export function RelationshipForm({ person, onClose }: RelationshipFormProps) {
     onClose();
   };
 
+  const handleSelectExisting = async () => {
+    if (!suggestionSelectedId || !suggestion) return;
+
+    const selectedPerson = people.find(p => p.id === suggestionSelectedId);
+    await addRelationship(suggestion.fromPerson.id, suggestionSelectedId, suggestion.type);
+
+    if (selectedPerson) {
+      const nextSuggestion = generateSuggestion(suggestion.type, selectedPerson);
+      if (nextSuggestion) {
+        setSuggestion(nextSuggestion);
+        setSuggestionSelectedId('');
+        return;
+      }
+    }
+    onClose();
+  };
+
   const selectedOption = RELATIONSHIP_OPTIONS.find(o => o.type === relationshipType);
 
   // Show suggestion view
@@ -168,25 +186,28 @@ export function RelationshipForm({ person, onClose }: RelationshipFormProps) {
             Or select an existing person:
           </p>
 
-          <div className="existing-people">
-            {otherPeople.slice(0, 6).map(p => (
-              <button
-                key={p.id}
-                type="button"
-                className="existing-person-btn"
-                onClick={async () => {
-                  await addRelationship(suggestion.fromPerson.id, p.id, suggestion.type);
-                  const nextSuggestion = generateSuggestion(suggestion.type, p);
-                  if (nextSuggestion) {
-                    setSuggestion(nextSuggestion);
-                  } else {
-                    onClose();
-                  }
-                }}
-              >
-                {p.name}
-              </button>
-            ))}
+          <div className="existing-person-select">
+            <select
+              value={suggestionSelectedId}
+              onChange={(e) => setSuggestionSelectedId(e.target.value)}
+            >
+              <option value="">Choose someone...</option>
+              {otherPeople
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+            </select>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={!suggestionSelectedId}
+              onClick={handleSelectExisting}
+            >
+              Add
+            </button>
           </div>
         </div>
 
