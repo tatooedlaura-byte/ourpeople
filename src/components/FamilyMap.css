@@ -19,20 +19,28 @@
   font-size: 1.5rem;
 }
 
-.map-header .close-btn {
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  font-size: 1.5rem;
-  line-height: 1;
-  border-radius: 50%;
-  cursor: pointer;
+.map-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: center;
 }
 
-.map-header .close-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+.btn-close-map {
+  padding: 0.75rem 2rem;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  background: transparent;
+  color: #667eea;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-close-map:hover {
+  background: #667eea;
+  color: white;
 }
 
 .map-stats {

@@ -39,7 +39,6 @@ export function FamilyMap({ onSelectPerson, onClose }: FamilyMapProps) {
     <div className="family-map">
       <div className="map-header">
         <h2>Family Map</h2>
-        <button className="close-btn" onClick={onClose}>&times;</button>
       </div>
 
       <div className="map-stats">
@@ -134,6 +133,12 @@ export function FamilyMap({ onSelectPerson, onClose }: FamilyMapProps) {
           <p>Add some family members to see the map!</p>
         </div>
       )}
+
+      <div className="map-footer">
+        <button className="btn-close-map" onClick={onClose}>
+          Close Family Map
+        </button>
+      </div>
     </div>
   );
 }
