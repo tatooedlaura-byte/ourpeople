@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { EngineProvider, useEngine, useAddPerson, useDataOperations, usePerspective } from './hooks/useEngine';
 import { PersonCard, PersonForm, PersonDetail, FamilyMap } from './components';
 import type { Person } from './types';
@@ -17,6 +17,20 @@ function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const selectedPerson = people.find(p => p.id === selectedPersonId);
+
+  // Listen for person selection from relationship chips
+  useEffect(() => {
+    const handleSelectPerson = (e: CustomEvent<string>) => {
+      setSelectedPersonId(e.detail);
+      setShowFamilyMap(false);
+      setShowAddForm(false);
+    };
+
+    window.addEventListener('selectPerson', handleSelectPerson as EventListener);
+    return () => {
+      window.removeEventListener('selectPerson', handleSelectPerson as EventListener);
+    };
+  }, []);
 
   if (isLoading) {
     return (

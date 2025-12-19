@@ -153,6 +153,175 @@
   color: #2d3748;
 }
 
+/* Inline Relationship Editor */
+.relationships-editor {
+  padding: 1rem 2rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.relationship-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.relationship-section:last-child {
+  border-bottom: none;
+}
+
+.section-label {
+  width: 80px;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #718096;
+  padding-top: 0.5rem;
+}
+
+.section-content {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.relationship-chip {
+  display: flex;
+  align-items: center;
+  background: #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.chip-name {
+  padding: 0.4rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: #2d3748;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.chip-name:hover {
+  background: #cbd5e0;
+}
+
+.chip-remove {
+  padding: 0.4rem 0.5rem;
+  border: none;
+  background: transparent;
+  color: #a0aec0;
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.chip-remove:hover {
+  background: #fc8181;
+  color: white;
+}
+
+.add-btn-inline {
+  padding: 0.4rem 0.75rem;
+  border: 2px dashed #cbd5e0;
+  border-radius: 20px;
+  background: transparent;
+  color: #718096;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.add-btn-inline:hover {
+  border-color: #4299e1;
+  color: #4299e1;
+}
+
+.add-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f7fafc;
+  padding: 0.5rem;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.add-select {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: white;
+  min-width: 140px;
+}
+
+.add-input {
+  flex: 1;
+  min-width: 100px;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.add-input:focus {
+  outline: none;
+  border-color: #4299e1;
+}
+
+.add-gender {
+  width: 70px;
+  padding: 0.4rem 0.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: white;
+}
+
+.add-confirm,
+.add-cancel {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-confirm {
+  background: #48bb78;
+  color: white;
+}
+
+.add-confirm:hover:not(:disabled) {
+  background: #38a169;
+}
+
+.add-confirm:disabled {
+  background: #cbd5e0;
+  cursor: not-allowed;
+}
+
+.add-cancel {
+  background: #e2e8f0;
+  color: #718096;
+}
+
+.add-cancel:hover {
+  background: #cbd5e0;
+}
+
 .notes-section {
   padding: 0 2rem 1rem;
 }
