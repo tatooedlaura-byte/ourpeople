@@ -8,7 +8,8 @@ function AppContent() {
   const { isLoading, error, people, perspective } = useEngine();
   const { perspectiveId, setPerspective } = usePerspective();
   const addPerson = useAddPerson();
-  const { exportData, importData } = useDataOperations();
+  const { exportData, importData, clearAll } = useDataOperations();
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -84,6 +85,13 @@ function AppContent() {
       }
     };
     input.click();
+  };
+
+  const handleClearAll = async () => {
+    await clearAll();
+    setSelectedPersonId(null);
+    setPerspective(null);
+    setShowClearConfirm(false);
   };
 
   // Filter and sort people alphabetically
@@ -170,7 +178,25 @@ function AppContent() {
           <div className="sidebar-footer">
             <button className="btn-text" onClick={handleExport}>Export</button>
             <button className="btn-text" onClick={handleImport}>Import</button>
+            <button className="btn-text btn-danger" onClick={() => setShowClearConfirm(true)}>Clear All</button>
           </div>
+
+          {showClearConfirm && (
+            <div className="confirm-overlay">
+              <div className="confirm-dialog">
+                <h3>Clear All Data?</h3>
+                <p>This will permanently delete all people and relationships. This cannot be undone.</p>
+                <div className="confirm-actions">
+                  <button className="btn-secondary" onClick={() => setShowClearConfirm(false)}>
+                    Cancel
+                  </button>
+                  <button className="btn-danger-solid" onClick={handleClearAll}>
+                    Yes, Delete Everything
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </aside>
 
         <section className="content">
