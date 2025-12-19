@@ -1,38 +1,39 @@
 /**
- * Our People - Relationship Engine
+ * Our People - Family Engine
  *
- * This is NOT a genealogy engine. It generates plain-language explanations.
- *
- * Core question: "Who is this person, explained using people I already know?"
- *
- * Users input only 5 relationship types. Everything else is derived.
+ * A simplified relationship engine that explains people through names you know.
+ * Instead of computing genealogy labels like "great-aunt", it says "Grandma Mary's sister".
  */
 
 import type {
   Person,
   Relationship,
   RelationshipType,
-  Explanation,
   PersonExplanation,
+  Nametag,
+  NametagLine,
   StorageAdapter,
 } from '../types';
-import { DERIVED_LABELS, ENGINE_CONFIG } from '../types';
+import { RELATIONSHIP_WORDS, SHORTCUT_LABELS } from '../types';
 
 // =============================================================================
-// RELATIONSHIP ENGINE
+// FAMILY ENGINE
 // =============================================================================
 
-export class RelationshipEngine {
+export class FamilyEngine {
   private storage: StorageAdapter;
   private peopleCache: Map<string, Person> = new Map();
   private relationshipsCache: Map<string, Relationship> = new Map();
 
-  // Adjacency list: personId -> [{ personId, type, direction }]
+  // Adjacency list: personId -> [{ personId, type, relationshipId }]
   private adjacencyList: Map<string, Array<{
     personId: string;
     type: RelationshipType;
     relationshipId: string;
   }>> = new Map();
+
+  // Current perspective - who is "you" when viewing
+  private perspectiveId: string | null = null;
 
   constructor(storage: StorageAdapter) {
     this.storage = storage;
@@ -61,6 +62,12 @@ export class RelationshipEngine {
       this.relationshipsCache.set(rel.id, rel);
       this.addToAdjacencyList(rel);
     }
+
+    // Set initial perspective from legacy isUser flag if present
+    const legacyUser = people.find(p => p.isUser);
+    if (legacyUser) {
+      this.perspectiveId = legacyUser.id;
+    }
   }
 
   private addToAdjacencyList(rel: Relationship): void {
@@ -68,8 +75,8 @@ export class RelationshipEngine {
     const listB = this.adjacencyList.get(rel.personBId) || [];
 
     // "A is [type] of B" means:
-    // - From B going to A: B follows [type] to reach A (e.g., B goes to their parent A)
-    // - From A going to B: A follows inverse (e.g., A goes to their child B)
+    // - From B going to A: B follows [type] to reach A
+    // - From A going to B: A follows inverse type
     listA.push({ personId: rel.personBId, type: this.getInverseType(rel.type), relationshipId: rel.id });
     listB.push({ personId: rel.personAId, type: rel.type, relationshipId: rel.id });
 
@@ -85,6 +92,23 @@ export class RelationshipEngine {
       case 'spouse': return 'spouse';
       case 'friend': return 'friend';
     }
+  }
+
+  // ===========================================================================
+  // PERSPECTIVE
+  // ===========================================================================
+
+  setPerspective(personId: string | null): void {
+    this.perspectiveId = personId;
+  }
+
+  getPerspective(): Person | undefined {
+    if (!this.perspectiveId) return undefined;
+    return this.peopleCache.get(this.perspectiveId);
+  }
+
+  getPerspectiveId(): string | null {
+    return this.perspectiveId;
   }
 
   // ===========================================================================
@@ -137,6 +161,11 @@ export class RelationshipEngine {
     this.peopleCache.delete(id);
     this.adjacencyList.delete(id);
 
+    // Clear perspective if deleted person was the perspective
+    if (this.perspectiveId === id) {
+      this.perspectiveId = null;
+    }
+
     // Clean up reverse references
     for (const [, list] of this.adjacencyList) {
       const idx = list.findIndex(r => r.personId === id);
@@ -150,21 +179,6 @@ export class RelationshipEngine {
 
   getAllPeople(): Person[] {
     return Array.from(this.peopleCache.values());
-  }
-
-  getUser(): Person | undefined {
-    return Array.from(this.peopleCache.values()).find(p => p.isUser);
-  }
-
-  async setUser(id: string): Promise<void> {
-    // Clear existing user flag
-    for (const person of this.peopleCache.values()) {
-      if (person.isUser && person.id !== id) {
-        await this.updatePerson(person.id, { isUser: false });
-      }
-    }
-    // Set new user
-    await this.updatePerson(id, { isUser: true });
   }
 
   // ===========================================================================
@@ -224,12 +238,13 @@ export class RelationshipEngine {
     }
   }
 
-  getDirectRelationships(personId: string): Array<{ person: Person; type: RelationshipType }> {
+  getDirectRelationships(personId: string): Array<{ person: Person; type: RelationshipType; relationshipId: string }> {
     const edges = this.adjacencyList.get(personId) || [];
     return edges
       .map(edge => ({
         person: this.peopleCache.get(edge.personId)!,
-        type: edge.type
+        type: edge.type,
+        relationshipId: edge.relationshipId
       }))
       .filter(r => r.person);
   }
@@ -239,17 +254,17 @@ export class RelationshipEngine {
   // ===========================================================================
 
   /**
-   * Find the shortest path between two people
+   * Find the shortest path between two people using BFS
    */
   private findShortestPath(
     fromId: string,
-    toId: string
+    toId: string,
+    maxDepth: number = 4
   ): { personIds: string[]; types: RelationshipType[] } | undefined {
     if (fromId === toId) {
       return { personIds: [fromId], types: [] };
     }
 
-    // BFS for shortest path
     const queue: Array<{ personId: string; path: string[]; types: RelationshipType[] }> = [];
     const visited = new Set<string>();
 
@@ -259,15 +274,15 @@ export class RelationshipEngine {
     while (queue.length > 0) {
       const current = queue.shift()!;
 
-      if (current.types.length >= ENGINE_CONFIG.MAX_TRAVERSAL_DEPTH) continue;
+      if (current.types.length >= maxDepth) continue;
 
       const edges = this.adjacencyList.get(current.personId) || [];
 
       for (const edge of edges) {
         if (visited.has(edge.personId)) continue;
 
-        // Friends are terminal
-        if (ENGINE_CONFIG.TERMINAL_TYPES.includes(edge.type) && edge.personId !== toId) {
+        // Friends are terminal - don't traverse through them (except to reach them directly)
+        if (edge.type === 'friend' && edge.personId !== toId) {
           continue;
         }
 
@@ -287,59 +302,30 @@ export class RelationshipEngine {
   }
 
   // ===========================================================================
-  // LABEL GENERATION
+  // RELATIONSHIP WORDS
   // ===========================================================================
 
   /**
-   * Get a human-readable label for a path (e.g., "aunt", "grandpa")
-   */
-  private getLabelForPath(types: RelationshipType[], targetGender?: 'male' | 'female'): string | null {
-    const key = types.join('.');
-    const entry = DERIVED_LABELS[key];
-
-    if (!entry) return null;
-
-    if (targetGender && entry.gendered) {
-      return targetGender === 'female' ? entry.gendered[0] : entry.gendered[1];
-    }
-
-    return entry.label;
-  }
-
-  /**
-   * Get the relationship word for a single hop
+   * Get the relationship word for a type with gender
    */
   private getRelationshipWord(type: RelationshipType, gender?: 'male' | 'female'): string {
-    const entry = DERIVED_LABELS[type];
-    if (entry && gender && entry.gendered) {
-      return gender === 'female' ? entry.gendered[0] : entry.gendered[1];
-    }
-    return type;
+    const words = RELATIONSHIP_WORDS[type];
+    if (gender === 'female') return words.female;
+    if (gender === 'male') return words.male;
+    return words.neutral;
   }
 
   /**
-   * Generate a derived display name like "Aunt Betty" or "Grandpa Joe"
+   * Get shortcut label for a path if one exists
    */
-  getDisplayName(personId: string): string {
-    const person = this.peopleCache.get(personId);
-    if (!person) return 'Unknown';
+  private getShortcutLabel(types: RelationshipType[], gender?: 'male' | 'female'): string | null {
+    const key = types.join('.');
+    const shortcut = SHORTCUT_LABELS[key];
+    if (!shortcut) return null;
 
-    const user = this.getUser();
-    if (!user || user.id === personId) return person.name;
-
-    const path = this.findShortestPath(user.id, personId);
-    if (!path || path.types.length === 0) return person.name;
-
-    const label = this.getLabelForPath(path.types, person.gender);
-
-    // Add title prefix for certain relationships
-    if (label && ['aunt', 'uncle', 'grandma', 'grandpa', 'great-grandma', 'great-grandpa', 'cousin'].includes(label)) {
-      // Capitalize first letter
-      const title = label.charAt(0).toUpperCase() + label.slice(1);
-      return `${title} ${person.name}`;
-    }
-
-    return person.name;
+    if (gender === 'female' && shortcut.female) return shortcut.female;
+    if (gender === 'male' && shortcut.male) return shortcut.male;
+    return shortcut.neutral;
   }
 
   // ===========================================================================
@@ -348,214 +334,202 @@ export class RelationshipEngine {
 
   /**
    * Generate plain-language explanations for a person
-   * This is the main feature of the app.
+   * Uses shortcuts for common relationships, name chains for distant ones
    */
-  getExplanations(personId: string): PersonExplanation {
+  explainPerson(personId: string): PersonExplanation {
     const person = this.peopleCache.get(personId);
     if (!person) {
-      return { personId, displayName: 'Unknown', explanations: [] };
+      return { personId, name: 'Unknown', explanations: [] };
     }
 
-    const user = this.getUser();
-    const explanations: Explanation[] = [];
+    const explanations: string[] = [];
+    const perspective = this.getPerspective();
 
-    // If this IS the user
-    if (person.isUser) {
+    // If this IS the perspective person
+    if (perspective && personId === perspective.id) {
       return {
         personId,
-        displayName: person.name,
-        explanations: ['is you!']
+        name: person.name,
+        explanations: ['This is you!']
       };
     }
 
-    // === Generate explanations from user's perspective ===
-    if (user) {
-      const pathFromUser = this.findShortestPath(user.id, personId);
+    // Generate explanation from perspective
+    if (perspective) {
+      const path = this.findShortestPath(perspective.id, personId);
 
-      if (pathFromUser && pathFromUser.types.length > 0) {
-        // Try to get a direct label ("is your aunt")
-        const label = this.getLabelForPath(pathFromUser.types, person.gender);
-        if (label) {
-          explanations.push({
-            sentence: `is your ${label}`,
-            clarity: 100
-          });
+      if (path && path.types.length > 0) {
+        // Try shortcut label first
+        const shortcut = this.getShortcutLabel(path.types, person.gender);
+        if (shortcut) {
+          explanations.push(`your ${shortcut}`);
         } else {
-          // Only show path explanation if we don't have a clean label
-          const pathExplanation = this.describePathThrough(pathFromUser, 'your');
-          if (pathExplanation) {
-            explanations.push({
-              sentence: pathExplanation,
-              clarity: 90
-            });
-          }
-        }
-      }
-
-      // === Generate explanations through well-known people ===
-      // Only add these if they provide new context (not just restating the direct relationship)
-      const wellKnown = this.getWellKnownPeople(user.id);
-
-      for (const knownPerson of wellKnown) {
-        if (knownPerson.id === personId) continue;
-
-        // Skip if this known person is your SPOUSE and is in the direct path to the target
-        // (e.g., don't say "is Chris's mom" when we already said "is your mother-in-law")
-        // But allow children in path - "is Abby's husband" is useful even if Abby is in the path
-        if (pathFromUser && pathFromUser.personIds.includes(knownPerson.id)) {
-          const isSpouse = this.getDirectRelationships(user.id)
-            .some(r => r.type === 'spouse' && r.person.id === knownPerson.id);
-          if (isSpouse) {
-            continue;
-          }
-        }
-
-        const pathFromKnown = this.findShortestPath(knownPerson.id, personId);
-        if (!pathFromKnown || pathFromKnown.types.length === 0 || pathFromKnown.types.length > 2) {
-          continue;
-        }
-
-        // Skip circular paths through spouse (e.g., "Chris's wife's dad" when you ARE the wife)
-        // But allow paths through children (e.g., "Abby's grandma") - those are useful context
-        const knownPersonRelation = this.getDirectRelationships(user.id)
-          .find(r => r.person.id === knownPerson.id);
-
-        if (knownPersonRelation?.type === 'spouse') {
-          // Any path from spouse that goes through you is circular - skip it
-          if (pathFromKnown.personIds.includes(user.id)) {
-            continue;
-          }
-        }
-
-        const explanation = this.describePathThrough(pathFromKnown, `${knownPerson.name}'s`);
-        if (explanation) {
-          // Avoid duplicates
-          const isDuplicate = explanations.some(e => e.sentence === explanation);
-          if (!isDuplicate) {
-            explanations.push({
-              sentence: explanation,
-              clarity: 70 - pathFromKnown.types.length * 10
-            });
-          }
+          // Build name chain
+          const chain = this.buildNameChain(path, 'your');
+          if (chain) explanations.push(chain);
         }
       }
     }
 
-    // If no user set, just show direct relationships
+    // Also add explanations through close family members (if different from direct path)
+    if (perspective) {
+      const closeFamily = this.getDirectRelationships(perspective.id)
+        .filter(r => r.type !== 'friend');
+
+      for (const familyMember of closeFamily.slice(0, 3)) {
+        if (familyMember.person.id === personId) continue;
+
+        const pathFromFamily = this.findShortestPath(familyMember.person.id, personId, 2);
+        if (!pathFromFamily || pathFromFamily.types.length === 0) continue;
+        if (pathFromFamily.types.length > 2) continue;
+
+        const chain = this.buildNameChain(pathFromFamily, `${familyMember.person.name}'s`);
+        if (chain && !explanations.includes(chain)) {
+          explanations.push(chain);
+        }
+      }
+    }
+
+    // If no perspective or no path found, show direct relationships
     if (explanations.length === 0) {
       const direct = this.getDirectRelationships(personId);
       for (const rel of direct.slice(0, 3)) {
-        const word = this.getRelationshipWord(rel.type, rel.person.gender);
-        explanations.push({
-          sentence: `is ${rel.person.name}'s ${word}`,
-          clarity: 50
-        });
+        const word = this.getRelationshipWord(rel.type, person.gender);
+        explanations.push(`${rel.person.name}'s ${word}`);
       }
     }
 
-    // Sort by clarity and limit
-    const sorted = explanations
-      .sort((a, b) => b.clarity - a.clarity)
-      .slice(0, ENGINE_CONFIG.MAX_EXPLANATIONS);
-
     return {
       personId,
-      displayName: this.getDisplayName(personId),
-      explanations: sorted.map(e => e.sentence)
+      name: person.name,
+      explanations: explanations.slice(0, 4)
     };
   }
 
   /**
-   * Describe a path through relationships
-   * e.g., "is your mom's sister"
+   * Build a name chain like "your mom's sister" or "Uncle Joe's wife"
    */
-  private describePathThrough(
+  private buildNameChain(
     path: { personIds: string[]; types: RelationshipType[] },
     startLabel: string
   ): string | null {
     if (path.types.length === 0) return null;
 
+    const targetPerson = this.peopleCache.get(path.personIds[path.personIds.length - 1]);
+    if (!targetPerson) return null;
+
+    // Single hop: "your mom", "your brother"
     if (path.types.length === 1) {
-      const targetPerson = this.peopleCache.get(path.personIds[path.personIds.length - 1]);
-      const word = this.getRelationshipWord(path.types[0], targetPerson?.gender);
-      return `is ${startLabel} ${word}`;
+      const word = this.getRelationshipWord(path.types[0], targetPerson.gender);
+      return `${startLabel} ${word}`;
     }
 
+    // Two hops: try shortcut, else chain through middle person
     if (path.types.length === 2) {
-      const targetPerson = this.peopleCache.get(path.personIds[path.personIds.length - 1]);
-
-      // Try to get a simple label (e.g., "grandma" instead of "dad's mom")
-      const label = this.getLabelForPath(path.types, targetPerson?.gender);
-      if (label) {
-        return `is ${startLabel} ${label}`;
+      const shortcut = this.getShortcutLabel(path.types, targetPerson.gender);
+      if (shortcut) {
+        return `${startLabel} ${shortcut}`;
       }
 
-      // Fallback to the verbose form
+      // Chain through middle person's name
       const middlePerson = this.peopleCache.get(path.personIds[1]);
       if (!middlePerson) return null;
 
-      const firstWord = this.getRelationshipWord(path.types[0], middlePerson.gender);
-      const secondWord = this.getRelationshipWord(path.types[1], targetPerson?.gender);
+      const middleWord = this.getRelationshipWord(path.types[0], middlePerson.gender);
+      const targetWord = this.getRelationshipWord(path.types[1], targetPerson.gender);
 
-      return `is ${startLabel} ${firstWord}'s ${secondWord}`;
+      return `${startLabel} ${middleWord}'s ${targetWord}`;
     }
 
-    if (path.types.length === 3) {
-      // For 3-hop paths, try to use a label if we have one
-      const targetPerson = this.peopleCache.get(path.personIds[path.personIds.length - 1]);
-      const label = this.getLabelForPath(path.types, targetPerson?.gender);
-
-      if (label) {
-        return `is ${startLabel} ${label}`;
+    // Three+ hops: try shortcut, else use middle person's name as anchor
+    if (path.types.length >= 3) {
+      const shortcut = this.getShortcutLabel(path.types, targetPerson.gender);
+      if (shortcut) {
+        return `${startLabel} ${shortcut}`;
       }
 
-      // Fallback: "connected through [middle person]"
+      // Use middle person as anchor: "connected through [Name]"
       const middlePerson = this.peopleCache.get(path.personIds[1]);
       if (middlePerson) {
-        return `is connected through ${middlePerson.name}`;
+        return `connected through ${middlePerson.name}`;
       }
     }
 
     return null;
   }
 
+  // ===========================================================================
+  // NAMETAG GENERATION - Reunion-style introductions
+  // ===========================================================================
+
   /**
-   * Get "well-known" people relative to the user
-   * These are people we can use as reference points in explanations
+   * Generate a nametag for someone like:
+   * "I'm Joe - Father of Karen, Amy; Grandpa to Abby, Josh; Son of Josephine"
    */
-  private getWellKnownPeople(userId: string): Person[] {
-    const wellKnown: Person[] = [];
-    const edges = this.adjacencyList.get(userId) || [];
-
-    for (const edge of edges) {
-      const person = this.peopleCache.get(edge.personId);
-      if (!person) continue;
-
-      // Parents, siblings, spouse, children are well-known
-      if (['parent', 'sibling', 'spouse', 'child'].includes(edge.type)) {
-        wellKnown.push(person);
-      }
+  generateNametag(personId: string): Nametag {
+    const person = this.peopleCache.get(personId);
+    if (!person) {
+      return { personId, name: 'Unknown', lines: [] };
     }
 
-    // Also include grandparents
-    for (const parentEdge of edges.filter(e => e.type === 'parent')) {
-      const parentEdges = this.adjacencyList.get(parentEdge.personId) || [];
-      for (const gpEdge of parentEdges.filter(e => e.type === 'parent')) {
-        const gp = this.peopleCache.get(gpEdge.personId);
-        if (gp) wellKnown.push(gp);
-      }
+    const lines: NametagLine[] = [];
+    const relationships = this.getDirectRelationships(personId);
+
+    // Group by type
+    const byType: Record<RelationshipType, Person[]> = {
+      spouse: [],
+      parent: [],
+      child: [],
+      sibling: [],
+      friend: []
+    };
+
+    for (const rel of relationships) {
+      byType[rel.type].push(rel.person);
     }
 
-    // Also include children's spouses (son/daughter-in-law)
-    for (const childEdge of edges.filter(e => e.type === 'child')) {
-      const childEdges = this.adjacencyList.get(childEdge.personId) || [];
-      for (const spouseEdge of childEdges.filter(e => e.type === 'spouse')) {
-        const inLaw = this.peopleCache.get(spouseEdge.personId);
-        if (inLaw) wellKnown.push(inLaw);
-      }
+    // Spouse
+    if (byType.spouse.length > 0) {
+      const label = person.gender === 'female' ? 'Wife of' : person.gender === 'male' ? 'Husband of' : 'Married to';
+      lines.push({ label, names: byType.spouse.map(p => p.name) });
     }
 
-    return wellKnown;
+    // Children
+    if (byType.child.length > 0) {
+      const label = person.gender === 'female' ? 'Mother of' : person.gender === 'male' ? 'Father of' : 'Parent of';
+      lines.push({ label, names: byType.child.map(p => p.name) });
+    }
+
+    // Grandchildren (children's children)
+    const grandchildren: Person[] = [];
+    for (const child of byType.child) {
+      const childsChildren = this.getDirectRelationships(child.id)
+        .filter(r => r.type === 'child')
+        .map(r => r.person);
+      grandchildren.push(...childsChildren);
+    }
+    if (grandchildren.length > 0) {
+      const label = person.gender === 'female' ? 'Grandma to' : person.gender === 'male' ? 'Grandpa to' : 'Grandparent of';
+      lines.push({ label, names: grandchildren.map(p => p.name) });
+    }
+
+    // Parents
+    if (byType.parent.length > 0) {
+      const label = person.gender === 'female' ? 'Daughter of' : person.gender === 'male' ? 'Son of' : 'Child of';
+      lines.push({ label, names: byType.parent.map(p => p.name) });
+    }
+
+    // Siblings
+    if (byType.sibling.length > 0) {
+      const label = person.gender === 'female' ? 'Sister of' : person.gender === 'male' ? 'Brother of' : 'Sibling of';
+      lines.push({ label, names: byType.sibling.map(p => p.name) });
+    }
+
+    return {
+      personId,
+      name: person.name,
+      lines
+    };
   }
 
   // ===========================================================================
@@ -576,5 +550,6 @@ export class RelationshipEngine {
     this.peopleCache.clear();
     this.relationshipsCache.clear();
     this.adjacencyList.clear();
+    this.perspectiveId = null;
   }
 }

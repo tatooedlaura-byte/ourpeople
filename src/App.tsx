@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { EngineProvider, useEngine, useAddPerson, useDataOperations } from './hooks/useEngine';
+import { EngineProvider, useEngine, useAddPerson, useDataOperations, usePerspective } from './hooks/useEngine';
 import { PersonCard, PersonForm, PersonDetail } from './components';
 import type { Person } from './types';
 import './App.css';
 
 function AppContent() {
-  const { isLoading, error, people, user } = useEngine();
+  const { isLoading, error, people, perspective } = useEngine();
+  const { perspectiveId, setPerspective } = usePerspective();
   const addPerson = useAddPerson();
   const { exportData, importData } = useDataOperations();
 
@@ -38,6 +39,10 @@ function AppContent() {
     setShowAddForm(false);
     if (newPerson) {
       setSelectedPersonId(newPerson.id);
+      // If this is the first person, set them as the perspective
+      if (people.length === 0) {
+        setPerspective(newPerson.id);
+      }
     }
   };
 
@@ -68,6 +73,8 @@ function AppContent() {
         if (data.people && data.relationships) {
           await importData(data);
           setSelectedPersonId(null);
+          // Clear perspective - user will need to select who they are
+          setPerspective(null);
         } else {
           alert('Invalid backup file format');
         }
@@ -92,7 +99,24 @@ function AppContent() {
     <div className="app">
       <header className="app-header">
         <h1>Our People</h1>
-        {user && <p className="user-indicator">Viewing as: {user.name}</p>}
+        <div className="perspective-selector">
+          <label htmlFor="perspective-select">Viewing as:</label>
+          <select
+            id="perspective-select"
+            value={perspectiveId || ''}
+            onChange={(e) => setPerspective(e.target.value || null)}
+          >
+            <option value="">Select yourself...</option>
+            {people
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map(person => (
+                <option key={person.id} value={person.id}>
+                  {person.name}
+                </option>
+              ))
+            }
+          </select>
+        </div>
       </header>
 
       <main className="app-main">
@@ -128,7 +152,7 @@ function AppContent() {
                   key={person.id}
                   person={person}
                   isSelected={person.id === selectedPersonId}
-                  showAsUser={person.isUser}
+                  showAsUser={person.id === perspectiveId}
                   onClick={() => setSelectedPersonId(person.id)}
                 />
               ))
@@ -157,24 +181,30 @@ function AppContent() {
             <div className="welcome">
               <h2>Our People</h2>
               <p>
-                A simple way to remember how everyone in your life is connected.
+                A family directory that explains relationships in plain language.
               </p>
+              {!perspective && people.length > 0 && (
+                <div className="perspective-hint">
+                  <p><strong>First, select yourself</strong> from the "Viewing as" dropdown above.</p>
+                  <p>This sets your perspective so relationships are explained relative to you.</p>
+                </div>
+              )}
               <div className="how-it-works">
                 <div className="step">
                   <span className="step-number">1</span>
-                  <span>Add people with just their name</span>
+                  <span>Add people and set who you are</span>
                 </div>
                 <div className="step">
                   <span className="step-number">2</span>
-                  <span>Define simple relationships (parent, child, sibling, spouse, friend)</span>
+                  <span>Add relationships (parent, child, sibling, spouse, friend)</span>
                 </div>
                 <div className="step">
                   <span className="step-number">3</span>
-                  <span>Tap anyone to see who they are in plain language</span>
+                  <span>Tap anyone to see who they are - like a family reunion nametag!</span>
                 </div>
               </div>
               <p className="tagline">
-                No charts. No genealogy. Just clear explanations.
+                Share the data with family. Everyone picks their own perspective.
               </p>
             </div>
           )}

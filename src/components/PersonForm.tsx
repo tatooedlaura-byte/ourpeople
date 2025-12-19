@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useRef, type FormEvent, type ChangeEvent } from 'react';
 import type { Person } from '../types';
 import './PersonForm.css';
 
@@ -9,11 +9,12 @@ interface PersonFormProps {
   isFirstPerson?: boolean;
 }
 
-export function PersonForm({ person, onSubmit, onCancel, isFirstPerson }: PersonFormProps) {
+export function PersonForm({ person, onSubmit, onCancel }: PersonFormProps) {
   const [name, setName] = useState(person?.name ?? '');
   const [gender, setGender] = useState<Person['gender']>(person?.gender);
   const [notes, setNotes] = useState(person?.notes ?? '');
-  const [isUser, setIsUser] = useState(person?.isUser ?? isFirstPerson ?? false);
+  const [photo, setPhoto] = useState<string | undefined>(person?.photo);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -24,8 +25,39 @@ export function PersonForm({ person, onSubmit, onCancel, isFirstPerson }: Person
       name: name.trim(),
       gender,
       notes: notes.trim() || undefined,
-      isUser
+      photo
     });
+  };
+
+  const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Image must be less than 2MB');
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhoto(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => {
+    setPhoto(undefined);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -49,6 +81,45 @@ export function PersonForm({ person, onSubmit, onCancel, isFirstPerson }: Person
       </div>
 
       <div className="form-group">
+        <label>Photo</label>
+        <div className="photo-upload">
+          {photo ? (
+            <div className="photo-preview">
+              <img src={photo} alt="Preview" />
+              <button
+                type="button"
+                className="btn-remove-photo"
+                onClick={handleRemovePhoto}
+                title="Remove photo"
+              >
+                &times;
+              </button>
+            </div>
+          ) : (
+            <div className="photo-placeholder">
+              <span>{name ? name[0].toUpperCase() : '?'}</span>
+            </div>
+          )}
+          <div className="photo-actions">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+              className="photo-input"
+              id="photo-input"
+            />
+            <label htmlFor="photo-input" className="btn-secondary photo-btn">
+              {photo ? 'Change Photo' : 'Add Photo'}
+            </label>
+          </div>
+        </div>
+        <p className="form-hint">
+          Optional - helps recognize people at reunions!
+        </p>
+      </div>
+
+      <div className="form-group">
         <label htmlFor="gender">Gender</label>
         <select
           id="gender"
@@ -61,20 +132,6 @@ export function PersonForm({ person, onSubmit, onCancel, isFirstPerson }: Person
         </select>
         <p className="form-hint">
           Helps with labels like "mom" vs "dad", "aunt" vs "uncle"
-        </p>
-      </div>
-
-      <div className="form-group checkbox-group">
-        <label>
-          <input
-            type="checkbox"
-            checked={isUser}
-            onChange={(e) => setIsUser(e.target.checked)}
-          />
-          <span>This is me</span>
-        </label>
-        <p className="form-hint">
-          Mark yourself so explanations can say "your mom", "your cousin", etc.
         </p>
       </div>
 

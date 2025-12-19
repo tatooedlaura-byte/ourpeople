@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Person } from '../types';
 import { PersonForm } from './PersonForm';
 import { RelationshipForm } from './RelationshipForm';
-import { useUpdatePerson, useDeletePerson, useExplanations, useSetUser } from '../hooks/useEngine';
+import { useUpdatePerson, useDeletePerson, useExplanations, useNametag, usePerspective } from '../hooks/useEngine';
 import './PersonDetail.css';
 
 interface PersonDetailProps {
@@ -16,8 +16,11 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
 
   const updatePerson = useUpdatePerson();
   const deletePerson = useDeletePerson();
-  const setUser = useSetUser();
+  const { perspectiveId, setPerspective } = usePerspective();
   const explanationData = useExplanations(person.id);
+  const nametag = useNametag(person.id);
+
+  const isCurrentPerspective = person.id === perspectiveId;
 
   const handleUpdate = async (data: Omit<Person, 'id' | 'createdAt' | 'updatedAt'>) => {
     await updatePerson(person.id, data);
@@ -31,8 +34,8 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
     }
   };
 
-  const handleSetAsMe = async () => {
-    await setUser(person.id);
+  const handleSetAsPerspective = () => {
+    setPerspective(person.id);
   };
 
   if (isEditing) {
@@ -74,14 +77,15 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
         </div>
 
         <h1 className="detail-name">
-          {explanationData?.displayName || person.name}
+          {person.name}
         </h1>
 
-        {person.isUser && (
+        {isCurrentPerspective && (
           <span className="you-badge-large">This is you</span>
         )}
       </div>
 
+      {/* Relationship Explanations */}
       <div className="explanations-section">
         {explanationData && explanationData.explanations.length > 0 ? (
           <ul className="explanations-list">
@@ -91,12 +95,27 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
               </li>
             ))}
           </ul>
-        ) : (
+        ) : !isCurrentPerspective && (
           <p className="no-explanations">
-            Add relationships to see how {person.name} is connected to your family.
+            Add relationships to see how {person.name} is connected to you.
           </p>
         )}
       </div>
+
+      {/* Nametag Section */}
+      {nametag && nametag.lines.length > 0 && (
+        <div className="nametag-section">
+          <h3 className="nametag-header">Family Connections</h3>
+          <div className="nametag-lines">
+            {nametag.lines.map((line, index) => (
+              <div key={index} className="nametag-line">
+                <span className="nametag-label">{line.label}</span>
+                <span className="nametag-names">{line.names.join(', ')}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {person.notes && (
         <div className="notes-section">
@@ -111,9 +130,9 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
         <button className="btn-action" onClick={() => setIsEditing(true)}>
           Edit
         </button>
-        {!person.isUser && (
-          <button className="btn-action btn-set-me" onClick={handleSetAsMe}>
-            Set as Me
+        {!isCurrentPerspective && (
+          <button className="btn-action btn-set-me" onClick={handleSetAsPerspective}>
+            View as {person.name}
           </button>
         )}
         <button className="btn-action btn-danger" onClick={handleDelete}>

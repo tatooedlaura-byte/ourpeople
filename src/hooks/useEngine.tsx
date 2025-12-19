@@ -1,29 +1,41 @@
 /**
- * React Context and Hooks for the Relationship Engine
+ * React Context and Hooks for the Family Engine
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { RelationshipEngine } from '../engine/RelationshipEngine';
+import { FamilyEngine } from '../engine/FamilyEngine';
 import { IndexedDBAdapter } from '../storage/IndexedDBAdapter';
-import type { Person, RelationshipType, PersonExplanation } from '../types';
+import type { Person, Relationship, RelationshipType, PersonExplanation, Nametag } from '../types';
+
+// =============================================================================
+// CONTEXT
+// =============================================================================
 
 interface EngineContextValue {
-  engine: RelationshipEngine | null;
+  engine: FamilyEngine | null;
   isLoading: boolean;
   error: string | null;
   people: Person[];
-  user: Person | undefined;
+  perspective: Person | undefined;
+  perspectiveId: string | null;
   refreshPeople: () => void;
 }
 
 const EngineContext = createContext<EngineContextValue | null>(null);
 
+// =============================================================================
+// PROVIDER
+// =============================================================================
+
+const PERSPECTIVE_STORAGE_KEY = 'ourpeople-perspective';
+
 export function EngineProvider({ children }: { children: ReactNode }) {
-  const [engine, setEngine] = useState<RelationshipEngine | null>(null);
+  const [engine, setEngine] = useState<FamilyEngine | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [people, setPeople] = useState<Person[]>([]);
-  const [user, setUser] = useState<Person | undefined>();
+  const [perspective, setPerspective] = useState<Person | undefined>();
+  const [perspectiveId, setPerspectiveId] = useState<string | null>(null);
 
   useEffect(() => {
     async function initEngine() {
@@ -31,12 +43,19 @@ export function EngineProvider({ children }: { children: ReactNode }) {
         const storage = new IndexedDBAdapter();
         await storage.init();
 
-        const eng = new RelationshipEngine(storage);
+        const eng = new FamilyEngine(storage);
         await eng.initialize();
+
+        // Restore perspective from localStorage
+        const savedPerspectiveId = localStorage.getItem(PERSPECTIVE_STORAGE_KEY);
+        if (savedPerspectiveId && eng.getPerson(savedPerspectiveId)) {
+          eng.setPerspective(savedPerspectiveId);
+        }
 
         setEngine(eng);
         setPeople(eng.getAllPeople());
-        setUser(eng.getUser());
+        setPerspective(eng.getPerspective());
+        setPerspectiveId(eng.getPerspectiveId());
         setIsLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to initialize');
@@ -50,16 +69,29 @@ export function EngineProvider({ children }: { children: ReactNode }) {
   const refreshPeople = useCallback(() => {
     if (engine) {
       setPeople(engine.getAllPeople());
-      setUser(engine.getUser());
+      setPerspective(engine.getPerspective());
+      setPerspectiveId(engine.getPerspectiveId());
     }
   }, [engine]);
 
   return (
-    <EngineContext.Provider value={{ engine, isLoading, error, people, user, refreshPeople }}>
+    <EngineContext.Provider value={{
+      engine,
+      isLoading,
+      error,
+      people,
+      perspective,
+      perspectiveId,
+      refreshPeople
+    }}>
       {children}
     </EngineContext.Provider>
   );
 }
+
+// =============================================================================
+// HOOKS
+// =============================================================================
 
 export function useEngine() {
   const context = useContext(EngineContext);
@@ -67,6 +99,27 @@ export function useEngine() {
     throw new Error('useEngine must be used within an EngineProvider');
   }
   return context;
+}
+
+// Hook for perspective management
+export function usePerspective() {
+  const { engine, perspectiveId, refreshPeople } = useEngine();
+
+  const setPerspective = useCallback((personId: string | null) => {
+    if (!engine) return;
+    engine.setPerspective(personId);
+
+    // Persist to localStorage
+    if (personId) {
+      localStorage.setItem(PERSPECTIVE_STORAGE_KEY, personId);
+    } else {
+      localStorage.removeItem(PERSPECTIVE_STORAGE_KEY);
+    }
+
+    refreshPeople();
+  }, [engine, refreshPeople]);
+
+  return { perspectiveId, setPerspective };
 }
 
 // Hook for adding a person
@@ -104,31 +157,20 @@ export function useDeletePerson() {
   }, [engine, refreshPeople]);
 }
 
-// Hook for setting the user ("you")
-export function useSetUser() {
-  const { engine, refreshPeople } = useEngine();
-
-  return useCallback(async (id: string) => {
-    if (!engine) return;
-    await engine.setUser(id);
-    refreshPeople();
-  }, [engine, refreshPeople]);
-}
-
 // Hook for getting explanations for a person
 export function useExplanations(personId: string | null): PersonExplanation | undefined {
   const { engine } = useEngine();
 
   if (!engine || !personId) return undefined;
-  return engine.getExplanations(personId);
+  return engine.explainPerson(personId);
 }
 
-// Hook for getting display name
-export function useDisplayName(personId: string | null): string {
+// Hook for getting nametag for a person
+export function useNametag(personId: string | null): Nametag | undefined {
   const { engine } = useEngine();
 
-  if (!engine || !personId) return '';
-  return engine.getDisplayName(personId);
+  if (!engine || !personId) return undefined;
+  return engine.generateNametag(personId);
 }
 
 // Hook for adding a relationship
@@ -144,6 +186,17 @@ export function useAddRelationship() {
     const rel = await engine.addRelationship(personAId, personBId, type);
     refreshPeople();
     return rel;
+  }, [engine, refreshPeople]);
+}
+
+// Hook for deleting a relationship
+export function useDeleteRelationship() {
+  const { engine, refreshPeople } = useEngine();
+
+  return useCallback(async (id: string) => {
+    if (!engine) return;
+    await engine.deleteRelationship(id);
+    refreshPeople();
   }, [engine, refreshPeople]);
 }
 
@@ -164,7 +217,7 @@ export function useDataOperations() {
     return engine.exportData();
   }, [engine]);
 
-  const importData = useCallback(async (data: { people: Person[]; relationships: any[] }) => {
+  const importData = useCallback(async (data: { people: Person[]; relationships: Relationship[] }) => {
     if (!engine) return;
     await engine.importData(data);
     refreshPeople();

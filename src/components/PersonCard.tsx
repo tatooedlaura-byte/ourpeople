@@ -1,5 +1,4 @@
 import type { Person } from '../types';
-import { useDisplayName } from '../hooks/useEngine';
 import './PersonCard.css';
 
 interface PersonCardProps {
@@ -10,8 +9,6 @@ interface PersonCardProps {
 }
 
 export function PersonCard({ person, onClick, isSelected, showAsUser }: PersonCardProps) {
-  const displayName = useDisplayName(person.id);
-
   return (
     <div
       className={`person-card ${isSelected ? 'selected' : ''} ${showAsUser ? 'is-user' : ''}`}
@@ -22,7 +19,7 @@ export function PersonCard({ person, onClick, isSelected, showAsUser }: PersonCa
     >
       <div className="person-avatar">
         {person.photo ? (
-          <img src={person.photo} alt={displayName} />
+          <img src={person.photo} alt={person.name} />
         ) : (
           <span className="avatar-placeholder">
             {person.name.charAt(0).toUpperCase()}
@@ -30,8 +27,8 @@ export function PersonCard({ person, onClick, isSelected, showAsUser }: PersonCa
         )}
       </div>
       <div className="person-info">
-        <h3 className="person-name">{displayName || person.name}</h3>
-        {person.isUser && <span className="you-badge">You</span>}
+        <h3 className="person-name">{person.name}</h3>
+        {showAsUser && <span className="you-badge">You</span>}
       </div>
     </div>
   );

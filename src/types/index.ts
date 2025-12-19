@@ -1,8 +1,8 @@
 /**
  * Our People - Type Definitions
  *
- * This is NOT a genealogy app. It's a plain-language explainer.
- * Users input only 5 relationship types. Everything else is derived.
+ * A family directory that explains relationships through names you know.
+ * Users input only 5 relationship types. Everything else is explained through paths.
  */
 
 // =============================================================================
@@ -13,7 +13,7 @@ export interface Person {
   id: string;
   name: string;              // Display name: "Betty", "Joe"
   gender?: 'male' | 'female';  // Used for gendered labels (mom/dad, aunt/uncle)
-  isUser?: boolean;          // True for "you" - the primary reference point
+  isUser?: boolean;          // Legacy - now we use perspective instead
   photo?: string;            // Base64 or blob URL
   notes?: string;
   createdAt: string;
@@ -29,7 +29,7 @@ export type RelationshipType =
   | 'child'     // A is child of B
   | 'sibling'   // A and B are siblings
   | 'spouse'    // A and B are married/partnered
-  | 'friend';   // Terminal - never traversed
+  | 'friend';   // Family friend - included in directory but not traversed
 
 export interface Relationship {
   id: string;
@@ -41,71 +41,86 @@ export interface Relationship {
 }
 
 // =============================================================================
-// DERIVED LABELS - Generated from paths, never input by users
+// RELATIONSHIP WORDS - Simple gendered labels for basic types
 // =============================================================================
 
-export interface DerivedLabel {
-  label: string;
-  gendered?: [string, string];  // [female, male] e.g., ['mom', 'dad']
+export interface RelationshipWord {
+  neutral: string;
+  female: string;
+  male: string;
 }
 
-// Path patterns mapped to human-readable labels
-// Read as: "from me, follow these relationship types"
-export const DERIVED_LABELS: Record<string, DerivedLabel> = {
-  // Direct relationships
-  'parent':                    { label: 'parent', gendered: ['mom', 'dad'] },
-  'child':                     { label: 'child', gendered: ['daughter', 'son'] },
-  'sibling':                   { label: 'sibling', gendered: ['sister', 'brother'] },
-  'spouse':                    { label: 'spouse', gendered: ['wife', 'husband'] },
-  'friend':                    { label: 'friend' },
-
-  // Grandparents & great-grandparents
-  'parent.parent':             { label: 'grandparent', gendered: ['grandma', 'grandpa'] },
-  'parent.parent.parent':      { label: 'great-grandparent', gendered: ['great-grandma', 'great-grandpa'] },
-
-  // Grandchildren
-  'child.child':               { label: 'grandchild', gendered: ['granddaughter', 'grandson'] },
-  'child.child.child':         { label: 'great-grandchild', gendered: ['great-granddaughter', 'great-grandson'] },
-
-  // Aunts & Uncles
-  'parent.sibling':            { label: 'aunt/uncle', gendered: ['aunt', 'uncle'] },
-  'parent.parent.sibling':     { label: 'great-aunt/uncle', gendered: ['great-aunt', 'great-uncle'] },
-
-  // Nieces & Nephews
-  'sibling.child':             { label: 'niece/nephew', gendered: ['niece', 'nephew'] },
-  'sibling.child.child':       { label: 'grandniece/grandnephew', gendered: ['grandniece', 'grandnephew'] },
-
-  // Cousins (just "cousin" - no second/removed nonsense)
-  'parent.sibling.child':      { label: 'cousin' },
-
-  // In-laws
-  'spouse.parent':             { label: 'parent-in-law', gendered: ['mother-in-law', 'father-in-law'] },
-  'spouse.parent.parent':      { label: 'grandparent-in-law', gendered: ['grandma-in-law', 'grandpa-in-law'] },
-  'spouse.sibling':            { label: 'sibling-in-law', gendered: ['sister-in-law', 'brother-in-law'] },
-  'sibling.spouse':            { label: 'sibling-in-law', gendered: ['sister-in-law', 'brother-in-law'] },
-  'child.spouse':              { label: 'child-in-law', gendered: ['daughter-in-law', 'son-in-law'] },
-  'child.child.spouse':        { label: 'grandchild-in-law', gendered: ['granddaughter-in-law', 'grandson-in-law'] },
-  'parent.sibling.spouse':     { label: 'aunt/uncle', gendered: ['aunt', 'uncle'] },  // Married-in aunt/uncle
-  'spouse.sibling.child':      { label: 'niece/nephew', gendered: ['niece', 'nephew'] },  // Spouse's niece/nephew
-
-  // Step-family (through parent's spouse)
-  'parent.spouse':             { label: 'step-parent', gendered: ['step-mom', 'step-dad'] },
-  'parent.spouse.child':       { label: 'step-sibling', gendered: ['step-sister', 'step-brother'] },
+export const RELATIONSHIP_WORDS: Record<RelationshipType, RelationshipWord> = {
+  parent:  { neutral: 'parent',  female: 'mom',      male: 'dad' },
+  child:   { neutral: 'child',   female: 'daughter', male: 'son' },
+  sibling: { neutral: 'sibling', female: 'sister',   male: 'brother' },
+  spouse:  { neutral: 'spouse',  female: 'wife',     male: 'husband' },
+  friend:  { neutral: 'friend',  female: 'friend',   male: 'friend' },
 };
 
 // =============================================================================
-// EXPLANATION OUTPUT
+// SHORTCUT LABELS - Common multi-hop relationships we name directly
 // =============================================================================
 
-export interface Explanation {
-  sentence: string;    // "is your mom's sister"
-  clarity: number;     // Higher = better (for sorting)
+export interface ShortcutLabel {
+  neutral: string;
+  female?: string;
+  male?: string;
 }
+
+// Path patterns (dot-separated) mapped to shortcut labels
+// Only the most common/useful ones - everything else uses name chains
+export const SHORTCUT_LABELS: Record<string, ShortcutLabel> = {
+  // Grandparents & great-grandparents
+  'parent.parent':             { neutral: 'grandparent', female: 'grandma', male: 'grandpa' },
+  'parent.parent.parent':      { neutral: 'great-grandparent', female: 'great-grandma', male: 'great-grandpa' },
+
+  // Grandchildren
+  'child.child':               { neutral: 'grandchild', female: 'granddaughter', male: 'grandson' },
+
+  // Aunts & Uncles (blood)
+  'parent.sibling':            { neutral: 'aunt/uncle', female: 'aunt', male: 'uncle' },
+
+  // Nieces & Nephews
+  'sibling.child':             { neutral: 'niece/nephew', female: 'niece', male: 'nephew' },
+
+  // Cousins
+  'parent.sibling.child':      { neutral: 'cousin' },
+
+  // In-laws (immediate)
+  'spouse.parent':             { neutral: 'parent-in-law', female: 'mother-in-law', male: 'father-in-law' },
+  'spouse.sibling':            { neutral: 'sibling-in-law', female: 'sister-in-law', male: 'brother-in-law' },
+  'sibling.spouse':            { neutral: 'sibling-in-law', female: 'sister-in-law', male: 'brother-in-law' },
+  'child.spouse':              { neutral: 'child-in-law', female: 'daughter-in-law', male: 'son-in-law' },
+
+  // Step-family
+  'parent.spouse':             { neutral: 'step-parent', female: 'step-mom', male: 'step-dad' },
+  'parent.spouse.child':       { neutral: 'step-sibling', female: 'step-sister', male: 'step-brother' },
+};
+
+// =============================================================================
+// NAMETAG - Reunion-style introduction
+// =============================================================================
+
+export interface NametagLine {
+  label: string;    // "Father of", "Married to", etc.
+  names: string[];  // ["Karen", "Amy", "Joe"]
+}
+
+export interface Nametag {
+  personId: string;
+  name: string;
+  lines: NametagLine[];
+}
+
+// =============================================================================
+// EXPLANATION - How someone is related (from a perspective)
+// =============================================================================
 
 export interface PersonExplanation {
   personId: string;
-  displayName: string;       // "Aunt Betty" (derived) or just "Betty"
-  explanations: string[];    // ["is your aunt", "is your mom's sister", ...]
+  name: string;
+  explanations: string[];  // ["your grandma", "Joe's mom"]
 }
 
 // =============================================================================
@@ -131,13 +146,3 @@ export interface StorageAdapter {
   importData(data: { people: Person[]; relationships: Relationship[] }): Promise<void>;
   clearAll(): Promise<void>;
 }
-
-// =============================================================================
-// CONFIGURATION
-// =============================================================================
-
-export const ENGINE_CONFIG = {
-  MAX_TRAVERSAL_DEPTH: 3,      // Never go deeper than 3 hops
-  MAX_EXPLANATIONS: 5,         // Show at most 5 explanations per person
-  TERMINAL_TYPES: ['friend'] as RelationshipType[],  // Never traverse beyond these
-};
