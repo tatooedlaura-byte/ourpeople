@@ -239,11 +239,43 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
       if (type === 'parent') {
         // Target is a parent OF current person
         await addRelationship(targetId, person.id, 'parent');
+
+        // Auto-connect: new parent should also be parent of current person's siblings
+        for (const sibling of relationshipsByType.sibling) {
+          await addRelationship(targetId, sibling.person.id, 'parent');
+        }
       } else if (type === 'child') {
         // Current person is parent OF target (target is child)
         await addRelationship(person.id, targetId, 'parent');
+
+        // Auto-connect: spouse should also be parent of this child
+        for (const spouse of relationshipsByType.spouse) {
+          await addRelationship(spouse.person.id, targetId, 'parent');
+        }
+
+        // Auto-connect: new child should be sibling of existing children
+        for (const child of relationshipsByType.child) {
+          if (child.person.id !== targetId) {
+            await addRelationship(targetId, child.person.id, 'sibling');
+          }
+        }
+      } else if (type === 'sibling') {
+        // Add sibling relationship
+        await addRelationship(person.id, targetId, 'sibling');
+
+        // Auto-connect: new sibling should also be sibling of existing siblings
+        for (const sibling of relationshipsByType.sibling) {
+          if (sibling.person.id !== targetId) {
+            await addRelationship(targetId, sibling.person.id, 'sibling');
+          }
+        }
+
+        // Auto-connect: current person's parents should also be new sibling's parents
+        for (const parent of relationshipsByType.parent) {
+          await addRelationship(parent.person.id, targetId, 'parent');
+        }
       } else {
-        // Symmetric relationships: spouse, sibling, friend
+        // Symmetric relationships: spouse, friend
         await addRelationship(person.id, targetId, type);
       }
     }
