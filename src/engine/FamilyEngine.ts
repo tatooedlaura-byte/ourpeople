@@ -194,9 +194,9 @@ export class FamilyEngine {
       return undefined;
     }
 
-    // Check for duplicate
-    const existingRels = this.adjacencyList.get(personAId) || [];
-    const duplicate = existingRels.find(r => r.personId === personBId && r.type === type);
+    // Check for duplicate - look in personB's list since it stores the original type
+    const existingRels = this.adjacencyList.get(personBId) || [];
+    const duplicate = existingRels.find(r => r.personId === personAId && r.type === type);
     if (duplicate) return this.relationshipsCache.get(duplicate.relationshipId);
 
     const now = new Date().toISOString();
