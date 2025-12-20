@@ -5,6 +5,19 @@ import { createShareLink, getSharedDataFromUrl, clearShareFromUrl, copyToClipboa
 import type { Person } from './types';
 import './App.css';
 
+function getBirthdaysThisMonth(people: Person[]): Array<{ person: Person; day: number }> {
+  const currentMonth = new Date().getMonth();
+  return people
+    .filter(p => p.birthday && !p.deceased)
+    .map(p => {
+      const date = new Date(p.birthday + 'T00:00:00');
+      return { person: p, month: date.getMonth(), day: date.getDate() };
+    })
+    .filter(p => p.month === currentMonth)
+    .sort((a, b) => a.day - b.day)
+    .map(({ person, day }) => ({ person, day }));
+}
+
 function AppContent() {
   const { isLoading, error, people, perspective } = useEngine();
   const { perspectiveId, setPerspective } = usePerspective();
@@ -317,6 +330,32 @@ function AppContent() {
               <p>
                 A family directory that explains relationships in plain language.
               </p>
+
+              {(() => {
+                const birthdays = getBirthdaysThisMonth(people);
+                if (birthdays.length > 0) {
+                  const monthName = new Date().toLocaleDateString('en-US', { month: 'long' });
+                  return (
+                    <div className="birthdays-section">
+                      <h3>Birthdays in {monthName}</h3>
+                      <div className="birthday-list">
+                        {birthdays.map(({ person, day }) => (
+                          <button
+                            key={person.id}
+                            className="birthday-item"
+                            onClick={() => setSelectedPersonId(person.id)}
+                          >
+                            <span className="birthday-day">{day}</span>
+                            <span className="birthday-name">{person.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
               {!perspective && people.length > 0 && (
                 <div className="perspective-hint">
                   <p><strong>First, select yourself</strong> from the "Viewing as" dropdown above.</p>

@@ -354,6 +354,55 @@ body {
   line-height: 1.6;
 }
 
+.birthdays-section {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+}
+
+.birthdays-section h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  color: #92400e;
+}
+
+.birthday-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.birthday-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.birthday-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.birthday-day {
+  font-weight: 700;
+  color: #d97706;
+  font-size: 0.9rem;
+}
+
+.birthday-name {
+  font-weight: 500;
+  color: #1a202c;
+  font-size: 0.9rem;
+}
+
 .features {
   display: flex;
   gap: 1.5rem;
