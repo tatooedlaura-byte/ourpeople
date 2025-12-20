@@ -25,6 +25,15 @@
   background: #f0fff4;
 }
 
+.person-card.deceased {
+  opacity: 0.6;
+  background: #f7fafc;
+}
+
+.person-card.deceased .person-avatar {
+  filter: grayscale(100%);
+}
+
 .person-avatar {
   width: 36px;
   height: 36px;

@@ -14,6 +14,8 @@ export function PersonForm({ person, onSubmit, onCancel }: PersonFormProps) {
   const [gender, setGender] = useState<Person['gender']>(person?.gender);
   const [notes, setNotes] = useState(person?.notes ?? '');
   const [photo, setPhoto] = useState<string | undefined>(person?.photo);
+  const [birthday, setBirthday] = useState(person?.birthday ?? '');
+  const [deceased, setDeceased] = useState(person?.deceased ?? false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -27,7 +29,9 @@ export function PersonForm({ person, onSubmit, onCancel }: PersonFormProps) {
       name: name.trim(),
       gender,
       notes: notes.trim() || undefined,
-      photo
+      photo,
+      birthday: birthday || undefined,
+      deceased: deceased || undefined
     });
   };
 
@@ -135,6 +139,27 @@ export function PersonForm({ person, onSubmit, onCancel }: PersonFormProps) {
         <p className="form-hint">
           Helps with labels like "mom" vs "dad", "aunt" vs "uncle"
         </p>
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="birthday">Birthday</label>
+        <input
+          id="birthday"
+          type="date"
+          value={birthday}
+          onChange={(e) => setBirthday(e.target.value)}
+        />
+      </div>
+
+      <div className="form-group">
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={deceased}
+            onChange={(e) => setDeceased(e.target.checked)}
+          />
+          <span>Deceased</span>
+        </label>
       </div>
 
       <div className="form-group">

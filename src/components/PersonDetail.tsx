@@ -14,6 +14,27 @@ import {
 } from '../hooks/useEngine';
 import './PersonDetail.css';
 
+function formatBirthday(birthday: string, deceased?: boolean): string {
+  const date = new Date(birthday + 'T00:00:00');
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  const day = date.getDate();
+  const year = date.getFullYear();
+
+  if (deceased) {
+    return `Born ${month} ${day}, ${year}`;
+  }
+
+  // Calculate age
+  const today = new Date();
+  let age = today.getFullYear() - year;
+  const monthDiff = today.getMonth() - date.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < day)) {
+    age--;
+  }
+
+  return `${month} ${day}, ${year} (${age})`;
+}
+
 interface PersonDetailProps {
   person: Person;
   onClose: () => void;
@@ -338,6 +359,16 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
 
         {isCurrentPerspective && (
           <span className="you-badge-large">This is you</span>
+        )}
+
+        {person.deceased && (
+          <span className="deceased-badge">Deceased</span>
+        )}
+
+        {person.birthday && (
+          <div className="birthday-info">
+            {formatBirthday(person.birthday, person.deceased)}
+          </div>
         )}
       </div>
 

@@ -65,20 +65,23 @@
   color: #718096;
 }
 
-.checkbox-group label {
+.checkbox-group label,
+.checkbox-label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
 }
 
-.checkbox-group input[type="checkbox"] {
+.checkbox-group input[type="checkbox"],
+.checkbox-label input[type="checkbox"] {
   width: 1.25rem;
   height: 1.25rem;
   cursor: pointer;
 }
 
-.checkbox-group span {
+.checkbox-group span,
+.checkbox-label span {
   font-size: 1rem;
   font-weight: 500;
   color: #2d3748;

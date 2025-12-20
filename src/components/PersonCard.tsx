@@ -9,9 +9,16 @@ interface PersonCardProps {
 }
 
 export function PersonCard({ person, onClick, isSelected, showAsUser }: PersonCardProps) {
+  const classes = [
+    'person-card',
+    isSelected && 'selected',
+    showAsUser && 'is-user',
+    person.deceased && 'deceased'
+  ].filter(Boolean).join(' ');
+
   return (
     <div
-      className={`person-card ${isSelected ? 'selected' : ''} ${showAsUser ? 'is-user' : ''}`}
+      className={classes}
       onClick={onClick}
       role="button"
       tabIndex={0}

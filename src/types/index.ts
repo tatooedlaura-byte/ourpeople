@@ -16,6 +16,8 @@ export interface Person {
   isUser?: boolean;          // Legacy - now we use perspective instead
   photo?: string;            // Base64 or blob URL
   notes?: string;
+  birthday?: string;         // ISO date string (YYYY-MM-DD)
+  deceased?: boolean;        // Whether person has passed
   createdAt: string;
   updatedAt: string;
 }
