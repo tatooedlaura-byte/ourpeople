@@ -3,9 +3,6 @@
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   overflow: hidden;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
 }
 
 .map-header {
@@ -15,7 +12,6 @@
   padding: 1.5rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  flex-shrink: 0;
 }
 
 .map-header h2 {
@@ -43,165 +39,54 @@
   border-color: rgba(255, 255, 255, 0.7);
 }
 
-.tree-hint {
-  padding: 0.75rem 1.5rem;
-  background: #ebf8ff;
-  color: #2b6cb0;
-  font-size: 0.9rem;
-  text-align: center;
-  border-bottom: 1px solid #bee3f8;
-}
-
-.tree-container {
-  flex: 1;
-  overflow-y: auto;
+.map-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
   padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
+  background: #f7fafc;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-/* Generation rows */
-.generation-row {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
+.stat {
+  text-align: center;
 }
 
-.generation-label {
-  font-size: 0.75rem;
-  font-weight: 600;
+.stat-number {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.stat-label {
+  font-size: 0.85rem;
   color: #718096;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 0.5rem;
-  background: #f7fafc;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
 }
 
-.generation-people {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
+.stat-good .stat-number {
+  color: #48bb78;
 }
 
-/* Tree nodes */
-.tree-node-wrapper {
-  display: flex;
-  align-items: center;
-  position: relative;
+.stat-warning .stat-number {
+  color: #ed8936;
 }
 
-.tree-node-wrapper.is-spouse {
-  margin-left: -0.25rem;
+.unconnected-section,
+.connected-section {
+  padding: 1.5rem;
 }
 
-.tree-node {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem;
-  background: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 70px;
-}
-
-.tree-node:hover {
-  border-color: #4299e1;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.tree-node.is-you {
-  border-color: #48bb78;
-  background: #f0fff4;
-}
-
-.tree-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.tree-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.tree-avatar span {
-  color: white;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.tree-name {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #2d3748;
-  text-align: center;
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Spouse connector (horizontal line) */
-.spouse-connector {
-  width: 12px;
-  height: 2px;
-  background: #e53e3e;
-  margin: 0 -2px;
-  align-self: center;
-  position: relative;
-}
-
-.spouse-connector::before {
-  content: '';
-  position: absolute;
-  top: -3px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 8px;
-  height: 8px;
-  background: #e53e3e;
-  border-radius: 50%;
-}
-
-/* Generation connector (vertical line) */
-.generation-connector {
-  width: 2px;
-  height: 24px;
-  background: linear-gradient(to bottom, #667eea, #a0aec0);
-  margin: 0.25rem 0;
-}
-
-/* Unconnected section */
 .unconnected-section {
-  padding: 1rem 1.5rem;
   background: #fffaf0;
-  border-top: 2px solid #fbd38d;
-  flex-shrink: 0;
+  border-bottom: 2px solid #fbd38d;
 }
 
 .section-title {
-  margin: 0 0 0.25rem;
-  font-size: 0.9rem;
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #2d3748;
 }
@@ -211,32 +96,106 @@
 }
 
 .section-hint {
-  margin: 0 0 0.75rem;
-  font-size: 0.8rem;
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
   color: #718096;
 }
 
-.unconnected-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.people-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
 }
 
-.unconnected-chip {
-  padding: 0.4rem 0.75rem;
+.person-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
   background: white;
-  border: 2px solid #fbd38d;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #c05621;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-align: center;
 }
 
-.unconnected-chip:hover {
-  background: #fbd38d;
-  color: #744210;
+.person-node:hover {
+  border-color: #4299e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.person-node.unconnected {
+  border-color: #fbd38d;
+  background: #fffaf0;
+}
+
+.person-node.unconnected:hover {
+  border-color: #ed8936;
+}
+
+.node-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.node-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.node-avatar span {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.node-name {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 0.95rem;
+}
+
+.node-status {
+  font-size: 0.75rem;
+  color: #ed8936;
+  font-weight: 500;
+}
+
+.node-connections {
+  font-size: 0.75rem;
+  color: #48bb78;
+  font-weight: 500;
+}
+
+.connection-preview {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.connection-tag {
+  font-size: 0.7rem;
+  background: #e2e8f0;
+  color: #4a5568;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+.connection-more {
+  font-size: 0.7rem;
+  color: #718096;
 }
 
 .empty-map {
@@ -250,22 +209,15 @@
 }
 
 @media (max-width: 500px) {
-  .tree-container {
-    padding: 1rem;
+  .map-stats {
+    gap: 1rem;
   }
 
-  .tree-node {
-    min-width: 60px;
-    padding: 0.4rem;
+  .stat-number {
+    font-size: 1.5rem;
   }
 
-  .tree-avatar {
-    width: 32px;
-    height: 32px;
-  }
-
-  .tree-name {
-    font-size: 0.7rem;
-    max-width: 60px;
+  .people-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   }
 }
