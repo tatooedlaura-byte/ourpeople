@@ -195,6 +195,39 @@ body {
   padding: 1rem;
   border-top: 1px solid #e2e8f0;
   display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.btn-share {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-share:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-share:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-share.btn-success {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+}
+
+.footer-secondary {
+  display: flex;
   justify-content: center;
   gap: 1rem;
 }
@@ -241,6 +274,16 @@ body {
 .confirm-dialog h3 {
   margin: 0 0 1rem;
   color: #e53e3e;
+}
+
+.share-dialog h3 {
+  color: #667eea;
+}
+
+.share-warning {
+  font-size: 0.9rem;
+  color: #e53e3e;
+  font-style: italic;
 }
 
 .confirm-dialog p {

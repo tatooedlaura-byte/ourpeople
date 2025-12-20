@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { EngineProvider, useEngine, useAddPerson, useDataOperations, usePerspective } from './hooks/useEngine';
 import { PersonCard, PersonForm, PersonDetail, FamilyMap } from './components';
+import { createShareLink, getSharedDataFromUrl, clearShareFromUrl, copyToClipboard } from './utils/sharing';
 import type { Person } from './types';
 import './App.css';
 
@@ -10,6 +11,8 @@ function AppContent() {
   const addPerson = useAddPerson();
   const { exportData, importData, clearAll } = useDataOperations();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [incomingShare, setIncomingShare] = useState<{ people: Person[]; relationships: any[] } | null>(null);
 
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -30,6 +33,14 @@ function AppContent() {
     return () => {
       window.removeEventListener('selectPerson', handleSelectPerson as EventListener);
     };
+  }, []);
+
+  // Check for incoming shared data in URL
+  useEffect(() => {
+    const sharedData = getSharedDataFromUrl();
+    if (sharedData) {
+      setIncomingShare(sharedData);
+    }
   }, []);
 
   if (isLoading) {
@@ -106,6 +117,40 @@ function AppContent() {
     setSelectedPersonId(null);
     setPerspective(null);
     setShowClearConfirm(false);
+  };
+
+  const handleShare = async () => {
+    const data = await exportData();
+    if (!data || data.people.length === 0) {
+      setShareStatus('error');
+      setTimeout(() => setShareStatus('idle'), 2000);
+      return;
+    }
+
+    const shareLink = createShareLink(data);
+    const success = await copyToClipboard(shareLink);
+
+    if (success) {
+      setShareStatus('copied');
+      setTimeout(() => setShareStatus('idle'), 3000);
+    } else {
+      setShareStatus('error');
+      setTimeout(() => setShareStatus('idle'), 2000);
+    }
+  };
+
+  const handleAcceptShare = async () => {
+    if (!incomingShare) return;
+    await importData(incomingShare);
+    setIncomingShare(null);
+    clearShareFromUrl();
+    setSelectedPersonId(null);
+    setPerspective(null);
+  };
+
+  const handleDeclineShare = () => {
+    setIncomingShare(null);
+    clearShareFromUrl();
   };
 
   // Filter and sort people alphabetically
@@ -190,9 +235,18 @@ function AppContent() {
           </div>
 
           <div className="sidebar-footer">
-            <button className="btn-text" onClick={handleExport}>Export</button>
-            <button className="btn-text" onClick={handleImport}>Import</button>
-            <button className="btn-text btn-danger" onClick={() => setShowClearConfirm(true)}>Clear All</button>
+            <button
+              className={`btn-share ${shareStatus === 'copied' ? 'btn-success' : ''}`}
+              onClick={handleShare}
+              disabled={people.length === 0}
+            >
+              {shareStatus === 'copied' ? 'Link Copied!' : shareStatus === 'error' ? 'Failed' : 'Share Link'}
+            </button>
+            <div className="footer-secondary">
+              <button className="btn-text" onClick={handleExport}>Export</button>
+              <button className="btn-text" onClick={handleImport}>Import</button>
+              <button className="btn-text btn-danger" onClick={() => setShowClearConfirm(true)}>Clear</button>
+            </div>
           </div>
 
           {showClearConfirm && (
@@ -206,6 +260,30 @@ function AppContent() {
                   </button>
                   <button className="btn-danger-solid" onClick={handleClearAll}>
                     Yes, Delete Everything
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {incomingShare && (
+            <div className="confirm-overlay">
+              <div className="confirm-dialog share-dialog">
+                <h3>Family Data Shared With You</h3>
+                <p>
+                  Someone shared their family directory with you!
+                  It contains <strong>{incomingShare.people.length} people</strong> and{' '}
+                  <strong>{incomingShare.relationships.length} relationships</strong>.
+                </p>
+                <p className="share-warning">
+                  This will replace any existing data you have.
+                </p>
+                <div className="confirm-actions">
+                  <button className="btn-secondary" onClick={handleDeclineShare}>
+                    No Thanks
+                  </button>
+                  <button className="btn-primary" onClick={handleAcceptShare}>
+                    Load Family Data
                   </button>
                 </div>
               </div>
