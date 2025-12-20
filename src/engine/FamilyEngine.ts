@@ -379,11 +379,13 @@ export class FamilyEngine {
     }
 
     // Generate explanation from perspective
+    let directPathLength = 0;
     if (perspective) {
       // Use preferShortcuts=true to find paths that have known labels (aunt, uncle, etc.)
       const path = this.findShortestPath(perspective.id, personId, 4, true);
 
       if (path && path.types.length > 0) {
+        directPathLength = path.types.length;
         // Try shortcut label first
         const shortcut = this.getShortcutLabel(path.types, person.gender);
         if (shortcut) {
@@ -396,12 +398,13 @@ export class FamilyEngine {
       }
     }
 
-    // Also add explanations through close family members (if different from direct path)
-    if (perspective) {
+    // Only add "through family member" explanations for distant relatives (3+ hops)
+    // For close family (parent, child, sibling, grandparent, etc.) the direct label is enough
+    if (perspective && directPathLength >= 3) {
       const closeFamily = this.getDirectRelationships(perspective.id)
         .filter(r => r.type !== 'friend');
 
-      for (const familyMember of closeFamily.slice(0, 3)) {
+      for (const familyMember of closeFamily.slice(0, 2)) {
         if (familyMember.person.id === personId) continue;
 
         const pathFromFamily = this.findShortestPath(familyMember.person.id, personId, 2);
