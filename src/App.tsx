@@ -5,18 +5,35 @@ import { createShareLink, getSharedDataFromUrl, clearShareFromUrl, copyToClipboa
 import type { Person } from './types';
 import './App.css';
 
-function getBirthdaysThisMonth(people: Person[]): Array<{ person: Person; day: number }> {
-  const currentMonth = new Date().getMonth();
-  return people
+function getBirthdaysByMonth(people: Person[]): Map<number, Array<{ person: Person; day: number }>> {
+  const months = new Map<number, Array<{ person: Person; day: number }>>();
+
+  // Initialize all months
+  for (let i = 0; i < 12; i++) {
+    months.set(i, []);
+  }
+
+  people
     .filter(p => p.birthday && !p.deceased)
-    .map(p => {
-      const date = new Date(p.birthday + 'T00:00:00');
-      return { person: p, month: date.getMonth(), day: date.getDate() };
-    })
-    .filter(p => p.month === currentMonth)
-    .sort((a, b) => a.day - b.day)
-    .map(({ person, day }) => ({ person, day }));
+    .forEach(p => {
+      const date = new Date(p.birthday! + 'T00:00:00');
+      const month = date.getMonth();
+      const day = date.getDate();
+      months.get(month)!.push({ person: p, day });
+    });
+
+  // Sort each month by day
+  for (const [, birthdays] of months) {
+    birthdays.sort((a, b) => a.day - b.day);
+  }
+
+  return months;
 }
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
 
 function AppContent() {
   const { isLoading, error, people, perspective } = useEngine();
@@ -30,6 +47,7 @@ function AppContent() {
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showFamilyMap, setShowFamilyMap] = useState(false);
+  const [showBirthdays, setShowBirthdays] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const selectedPerson = people.find(p => p.id === selectedPersonId);
@@ -180,6 +198,11 @@ function AppContent() {
     <div className="app">
       <header className="app-header">
         <h1>Our People</h1>
+        {people.some(p => p.birthday && !p.deceased) && (
+          <button className="btn-birthdays" onClick={() => setShowBirthdays(true)}>
+            Birthdays
+          </button>
+        )}
         <div className="perspective-selector">
           <label htmlFor="perspective-select">Viewing as:</label>
           <select
@@ -302,6 +325,49 @@ function AppContent() {
               </div>
             </div>
           )}
+
+          {showBirthdays && (
+            <div className="confirm-overlay" onClick={() => setShowBirthdays(false)}>
+              <div className="birthdays-modal" onClick={e => e.stopPropagation()}>
+                <div className="birthdays-modal-header">
+                  <h2>Birthdays</h2>
+                  <button className="close-btn" onClick={() => setShowBirthdays(false)}>&times;</button>
+                </div>
+                <div className="birthdays-modal-content">
+                  {Array.from(getBirthdaysByMonth(people).entries()).map(([month, birthdays]) => {
+                    const isCurrentMonth = month === new Date().getMonth();
+                    return (
+                      <div
+                        key={month}
+                        className={`birthday-month ${isCurrentMonth ? 'current' : ''} ${birthdays.length === 0 ? 'empty' : ''}`}
+                      >
+                        <h3>{MONTH_NAMES[month]}</h3>
+                        {birthdays.length > 0 ? (
+                          <div className="birthday-month-list">
+                            {birthdays.map(({ person, day }) => (
+                              <button
+                                key={person.id}
+                                className="birthday-month-item"
+                                onClick={() => {
+                                  setSelectedPersonId(person.id);
+                                  setShowBirthdays(false);
+                                }}
+                              >
+                                <span className="bday-day">{day}</span>
+                                <span className="bday-name">{person.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="no-birthdays">—</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </aside>
 
         <section className="content">
@@ -330,31 +396,6 @@ function AppContent() {
               <p>
                 A family directory that explains relationships in plain language.
               </p>
-
-              {(() => {
-                const birthdays = getBirthdaysThisMonth(people);
-                if (birthdays.length > 0) {
-                  const monthName = new Date().toLocaleDateString('en-US', { month: 'long' });
-                  return (
-                    <div className="birthdays-section">
-                      <h3>Birthdays in {monthName}</h3>
-                      <div className="birthday-list">
-                        {birthdays.map(({ person, day }) => (
-                          <button
-                            key={person.id}
-                            className="birthday-item"
-                            onClick={() => setSelectedPersonId(person.id)}
-                          >
-                            <span className="birthday-day">{day}</span>
-                            <span className="birthday-name">{person.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
 
               {!perspective && people.length > 0 && (
                 <div className="perspective-hint">
