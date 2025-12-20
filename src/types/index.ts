@@ -75,8 +75,9 @@ export const SHORTCUT_LABELS: Record<string, ShortcutLabel> = {
   'parent.parent':             { neutral: 'grandparent', female: 'grandma', male: 'grandpa' },
   'parent.parent.parent':      { neutral: 'great-grandparent', female: 'great-grandma', male: 'great-grandpa' },
 
-  // Grandchildren
+  // Grandchildren & great-grandchildren
   'child.child':               { neutral: 'grandchild', female: 'granddaughter', male: 'grandson' },
+  'child.child.child':         { neutral: 'great-grandchild', female: 'great-granddaughter', male: 'great-grandson' },
 
   // Aunts & Uncles (blood)
   'parent.sibling':            { neutral: 'aunt/uncle', female: 'aunt', male: 'uncle' },
