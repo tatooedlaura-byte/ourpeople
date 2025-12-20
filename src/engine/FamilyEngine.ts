@@ -294,8 +294,11 @@ export class FamilyEngine {
 
         if (edge.personId === toId) {
           if (preferShortcuts) {
-            shortestLength = newTypes.length;
-            allPaths.push({ personIds: newPath, types: newTypes });
+            // Only add paths that are the same length as the shortest
+            if (newTypes.length <= shortestLength) {
+              shortestLength = newTypes.length;
+              allPaths.push({ personIds: newPath, types: newTypes });
+            }
           } else {
             return { personIds: newPath, types: newTypes };
           }
