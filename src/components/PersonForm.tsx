@@ -14,13 +14,15 @@ export function PersonForm({ person, onSubmit, onCancel }: PersonFormProps) {
   const [gender, setGender] = useState<Person['gender']>(person?.gender);
   const [notes, setNotes] = useState(person?.notes ?? '');
   const [photo, setPhoto] = useState<string | undefined>(person?.photo);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim()) return;
+    if (!name.trim() || isSubmitting) return;
 
+    setIsSubmitting(true);
     onSubmit({
       name: name.trim(),
       gender,
@@ -147,11 +149,11 @@ export function PersonForm({ person, onSubmit, onCancel }: PersonFormProps) {
       </div>
 
       <div className="form-actions">
-        <button type="button" className="btn-secondary" onClick={onCancel}>
+        <button type="button" className="btn-secondary" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </button>
-        <button type="submit" className="btn-primary">
-          {person ? 'Save' : 'Add Person'}
+        <button type="submit" className="btn-primary" disabled={isSubmitting}>
+          {isSubmitting ? 'Adding...' : person ? 'Save' : 'Add Person'}
         </button>
       </div>
     </form>
