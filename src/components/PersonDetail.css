@@ -14,6 +14,9 @@
   padding: 0.75rem 1rem;
   background: #f7fafc;
   border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .saved-indicator {
@@ -289,7 +292,7 @@
   padding: 0.4rem 0.5rem;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 16px;
   font-family: inherit;
   background: white;
   min-width: 140px;
@@ -301,7 +304,7 @@
   padding: 0.4rem 0.5rem;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 16px;
   font-family: inherit;
 }
 
@@ -311,11 +314,11 @@
 }
 
 .add-gender {
-  width: 70px;
+  width: 80px;
   padding: 0.4rem 0.25rem;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 16px;
   font-family: inherit;
   background: white;
 }

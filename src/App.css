@@ -502,7 +502,7 @@ body {
   background: white;
   width: 90%;
   max-width: 500px;
-  max-height: 90vh;
+  max-height: 80vh;
   border-radius: 12px;
   overflow-y: auto;
 }
@@ -853,9 +853,8 @@ body {
 
   .sidebar {
     width: 100%;
-    max-height: 50vh;
+    flex: 1;
     border-right: none;
-    border-bottom: 1px solid #e2e8f0;
   }
 
   .content {

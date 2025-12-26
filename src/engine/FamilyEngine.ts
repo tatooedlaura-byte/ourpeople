@@ -426,7 +426,10 @@ export class FamilyEngine {
     if (explanations.length === 0) {
       const direct = this.getDirectRelationships(personId);
       for (const rel of direct.slice(0, 3)) {
-        const word = this.getRelationshipWord(rel.type, person.gender);
+        // rel.type is how we traverse FROM personId TO rel.person
+        // To say "rel.person's [word]", we need the inverse: how personId relates TO rel.person
+        const inverseType = this.getInverseType(rel.type);
+        const word = this.getRelationshipWord(inverseType, person.gender);
         explanations.push(`${rel.person.name}'s ${word}`);
       }
     }
