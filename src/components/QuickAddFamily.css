@@ -74,7 +74,7 @@
 
 .name-input:focus {
   outline: none;
-  border-color: #4299e1;
+  border-color: #5b9a8b;
 }
 
 .gender-select {
@@ -90,7 +90,7 @@
 
 .gender-select:focus {
   outline: none;
-  border-color: #4299e1;
+  border-color: #5b9a8b;
 }
 
 .btn-remove {
@@ -112,10 +112,10 @@
 
 .btn-add-child {
   padding: 0.5rem 1rem;
-  border: 2px dashed #4299e1;
+  border: 2px dashed #5b9a8b;
   border-radius: 8px;
   background: transparent;
-  color: #4299e1;
+  color: #5b9a8b;
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -169,7 +169,7 @@
 }
 
 .btn-primary {
-  background: #4299e1;
+  background: #5b9a8b;
   color: white;
 }
 

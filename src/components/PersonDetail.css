@@ -47,7 +47,7 @@
 .detail-header {
   text-align: center;
   padding: 2rem 2rem 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #5b9a8b 0%, #3d7a6a 100%);
   color: white;
 }
 
@@ -135,7 +135,7 @@
 
 .explanation-item::before {
   content: "•";
-  color: #4299e1;
+  color: #5b9a8b;
   font-weight: bold;
   margin-right: 0.75rem;
 }
@@ -179,7 +179,7 @@
 .nametag-label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #667eea;
+  color: #5b9a8b;
 }
 
 .nametag-names {
@@ -270,8 +270,8 @@
 }
 
 .add-btn-inline:hover {
-  border-color: #4299e1;
-  color: #4299e1;
+  border-color: #5b9a8b;
+  color: #5b9a8b;
 }
 
 .add-inline {
@@ -307,7 +307,7 @@
 
 .add-input:focus {
   outline: none;
-  border-color: #4299e1;
+  border-color: #5b9a8b;
 }
 
 .add-gender {
@@ -397,12 +397,12 @@
 }
 
 .btn-action.btn-quick-add {
-  background: #667eea;
+  background: linear-gradient(135deg, #5b9a8b 0%, #3d7a6a 100%);
   color: white;
 }
 
 .btn-action.btn-quick-add:hover {
-  background: #5a67d8;
+  background: #3d7a6a;
 }
 
 .btn-action.btn-set-me {

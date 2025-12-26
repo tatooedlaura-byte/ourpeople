@@ -194,16 +194,9 @@ body {
 
 .sidebar {
   width: 100%;
-  max-width: 500px;
   background: white;
-  border-right: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
-}
-
-.sidebar.expanded {
-  max-width: 100%;
 }
 
 .sidebar-header {
@@ -225,7 +218,7 @@ body {
 
 .search-input:focus {
   outline: none;
-  border-color: #4299e1;
+  border-color: #5b9a8b;
 }
 
 .sidebar-buttons {
@@ -488,6 +481,32 @@ body {
   z-index: 1000;
 }
 
+.modal-fullscreen {
+  background: white;
+  width: 95%;
+  height: 90%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.modal-form {
+  background: white;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  border-radius: 12px;
+  overflow-y: auto;
+}
+
+.modal-person {
+  background: white;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  border-radius: 12px;
+  overflow-y: auto;
+}
+
 .confirm-dialog {
   background: white;
   padding: 1.5rem;
@@ -741,7 +760,7 @@ body {
 }
 
 .feature strong {
-  color: #4299e1;
+  color: #5b9a8b;
   font-size: 1rem;
 }
 
@@ -783,7 +802,7 @@ body {
 
 .welcome .tagline {
   margin-top: 2rem;
-  color: #4299e1;
+  color: #5b9a8b;
   font-style: italic;
 }
 
@@ -800,7 +819,7 @@ body {
   width: 48px;
   height: 48px;
   border: 4px solid #e2e8f0;
-  border-top-color: #4299e1;
+  border-top-color: #5b9a8b;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

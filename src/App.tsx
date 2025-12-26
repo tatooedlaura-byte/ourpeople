@@ -271,7 +271,7 @@ function AppContent() {
       </header>
 
       <main className="app-main">
-        <aside className={`sidebar ${!selectedPerson && !showAddForm && !showFamilyMap ? 'expanded' : ''}`}>
+        <aside className="sidebar">
           <div className="sidebar-header">
             <input
               type="search"
@@ -463,28 +463,42 @@ function AppContent() {
           )}
         </aside>
 
-        <section className="content">
-          {showFamilyMap ? (
-            <FamilyMap
-              onSelectPerson={(id) => {
-                setSelectedPersonId(id);
-                setShowFamilyMap(false);
-              }}
-              onClose={() => setShowFamilyMap(false)}
-            />
-          ) : showAddForm ? (
-            <PersonForm
-              onSubmit={handleAddPerson}
-              onCancel={() => setShowAddForm(false)}
-              isFirstPerson={isFirstPerson}
-            />
-          ) : selectedPerson ? (
-            <PersonDetail
-              person={selectedPerson}
-              onClose={() => setSelectedPersonId(null)}
-            />
-          ) : null}
-        </section>
+        {showFamilyMap && (
+          <div className="confirm-overlay" onClick={() => setShowFamilyMap(false)}>
+            <div className="modal-fullscreen" onClick={e => e.stopPropagation()}>
+              <FamilyMap
+                onSelectPerson={(id) => {
+                  setSelectedPersonId(id);
+                  setShowFamilyMap(false);
+                }}
+                onClose={() => setShowFamilyMap(false)}
+              />
+            </div>
+          </div>
+        )}
+
+        {showAddForm && (
+          <div className="confirm-overlay" onClick={() => setShowAddForm(false)}>
+            <div className="modal-form" onClick={e => e.stopPropagation()}>
+              <PersonForm
+                onSubmit={handleAddPerson}
+                onCancel={() => setShowAddForm(false)}
+                isFirstPerson={isFirstPerson}
+              />
+            </div>
+          </div>
+        )}
+
+        {selectedPerson && (
+          <div className="confirm-overlay" onClick={() => setSelectedPersonId(null)}>
+            <div className="modal-person" onClick={e => e.stopPropagation()}>
+              <PersonDetail
+                person={selectedPerson}
+                onClose={() => setSelectedPersonId(null)}
+              />
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
