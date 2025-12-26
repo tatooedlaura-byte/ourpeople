@@ -8,12 +8,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'Our People - Family Tree',
         short_name: 'Our People',
         description: 'A private, offline-first family tree and relationship tracker',
-        theme_color: '#4a5568',
+        theme_color: '#5b9a8b',
         background_color: '#ffffff',
         display: 'standalone',
         icons: [

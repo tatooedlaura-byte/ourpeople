@@ -386,14 +386,18 @@ export class FamilyEngine {
 
       if (path && path.types.length > 0) {
         directPathLength = path.types.length;
-        // Try shortcut label first
+        // Add shortcut label if one exists
         const shortcut = this.getShortcutLabel(path.types, person.gender);
         if (shortcut) {
           explanations.push(`your ${shortcut}`);
-        } else {
-          // Build name chain
+        }
+        // Also add name chain for extended family (2+ hops) - shows both!
+        // e.g., "your great-aunt" AND "Grandma Mary's sister"
+        if (path.types.length >= 2) {
           const chain = this.buildNameChain(path, 'your');
-          if (chain) explanations.push(chain);
+          if (chain && chain !== `your ${shortcut}`) {
+            explanations.push(chain);
+          }
         }
       }
     }

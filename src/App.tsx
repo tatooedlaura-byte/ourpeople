@@ -36,18 +36,21 @@ const MONTH_NAMES = [
 ];
 
 function AppContent() {
-  const { isLoading, error, people, perspective } = useEngine();
+  const { isLoading, error, people } = useEngine();
   const { perspectiveId, setPerspective } = usePerspective();
   const addPerson = useAddPerson();
   const { exportData, importData, clearAll } = useDataOperations();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [exportStatus, setExportStatus] = useState<'idle' | 'done'>('idle');
   const [incomingShare, setIncomingShare] = useState<{ people: Person[]; relationships: any[] } | null>(null);
 
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showFamilyMap, setShowFamilyMap] = useState(false);
   const [showBirthdays, setShowBirthdays] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
   const selectedPerson = people.find(p => p.id === selectedPersonId);
@@ -115,6 +118,9 @@ function AppContent() {
     a.download = `our-people-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
+
+    setExportStatus('done');
+    setTimeout(() => setExportStatus('idle'), 2000);
   };
 
   const handleImport = async () => {
@@ -194,6 +200,47 @@ function AppContent() {
 
   const isFirstPerson = people.length === 0;
 
+  // Show splash screen
+  if (showSplash) {
+    return (
+      <div className="splash">
+        <div className="splash-content">
+          <div className="splash-logo">
+            <img src="./apple-touch-icon.png" alt="Our People" />
+          </div>
+          <h1>Our People</h1>
+          <p className="splash-tagline">A family directory that explains relationships in plain language.</p>
+
+          {people.length > 0 ? (
+            <div className="splash-perspective">
+              <label>Who are you?</label>
+              <select
+                value={perspectiveId || ''}
+                onChange={(e) => setPerspective(e.target.value || null)}
+              >
+                <option value="">Select yourself...</option>
+                {people
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map(person => (
+                    <option key={person.id} value={person.id}>
+                      {person.name}
+                    </option>
+                  ))
+                }
+              </select>
+            </div>
+          ) : (
+            <p className="splash-empty">No family members yet. Add your first person to get started!</p>
+          )}
+
+          <button className="splash-enter" onClick={() => setShowSplash(false)}>
+            {people.length === 0 ? 'Get Started' : 'Enter'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -224,7 +271,7 @@ function AppContent() {
       </header>
 
       <main className="app-main">
-        <aside className="sidebar">
+        <aside className={`sidebar ${!selectedPerson && !showAddForm && !showFamilyMap ? 'expanded' : ''}`}>
           <div className="sidebar-header">
             <input
               type="search"
@@ -278,11 +325,9 @@ function AppContent() {
             >
               {shareStatus === 'copied' ? 'Link Copied!' : shareStatus === 'error' ? 'Failed' : 'Share Link'}
             </button>
-            <div className="footer-secondary">
-              <button className="btn-text" onClick={handleExport}>Export</button>
-              <button className="btn-text" onClick={handleImport}>Import</button>
-              <button className="btn-text btn-danger" onClick={() => setShowClearConfirm(true)}>Clear</button>
-            </div>
+            <button className="btn-settings" onClick={() => setShowSettings(true)}>
+              Settings
+            </button>
           </div>
 
           {showClearConfirm && (
@@ -368,6 +413,54 @@ function AppContent() {
               </div>
             </div>
           )}
+
+          {showSettings && (
+            <div className="confirm-overlay" onClick={() => setShowSettings(false)}>
+              <div className="settings-modal" onClick={e => e.stopPropagation()}>
+                <div className="settings-modal-header">
+                  <h2>Settings</h2>
+                  <button className="close-btn" onClick={() => setShowSettings(false)}>&times;</button>
+                </div>
+                <div className="settings-modal-content">
+                  <div className="settings-section settings-about">
+                    <h3>About Our People</h3>
+                    <p className="about-desc">A family directory that explains relationships in plain language.</p>
+                    <div className="about-steps">
+                      <div className="about-step"><span>1</span> Add people and set who you are</div>
+                      <div className="about-step"><span>2</span> Add relationships (parent, child, sibling, spouse)</div>
+                      <div className="about-step"><span>3</span> Tap anyone to see who they are!</div>
+                    </div>
+                  </div>
+                  <div className="settings-section">
+                    <h3>Data Management</h3>
+                    <div className="settings-buttons">
+                      <button
+                        className={`settings-btn ${exportStatus === 'done' ? 'btn-success' : ''}`}
+                        onClick={handleExport}
+                      >
+                        {exportStatus === 'done' ? 'Saved!' : 'Export Backup'}
+                      </button>
+                      <button className="settings-btn" onClick={handleImport}>
+                        Import Backup
+                      </button>
+                    </div>
+                  </div>
+                  <div className="settings-section settings-danger">
+                    <h3>Danger Zone</h3>
+                    <button
+                      className="settings-btn btn-danger-solid"
+                      onClick={() => {
+                        setShowSettings(false);
+                        setShowClearConfirm(true);
+                      }}
+                    >
+                      Clear All Data
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </aside>
 
         <section className="content">
@@ -390,38 +483,7 @@ function AppContent() {
               person={selectedPerson}
               onClose={() => setSelectedPersonId(null)}
             />
-          ) : (
-            <div className="welcome">
-              <h2>Our People</h2>
-              <p>
-                A family directory that explains relationships in plain language.
-              </p>
-
-              {!perspective && people.length > 0 && (
-                <div className="perspective-hint">
-                  <p><strong>First, select yourself</strong> from the "Viewing as" dropdown above.</p>
-                  <p>This sets your perspective so relationships are explained relative to you.</p>
-                </div>
-              )}
-              <div className="how-it-works">
-                <div className="step">
-                  <span className="step-number">1</span>
-                  <span>Add people and set who you are</span>
-                </div>
-                <div className="step">
-                  <span className="step-number">2</span>
-                  <span>Add relationships (parent, child, sibling, spouse, friend)</span>
-                </div>
-                <div className="step">
-                  <span className="step-number">3</span>
-                  <span>Tap anyone to see who they are - like a family reunion nametag!</span>
-                </div>
-              </div>
-              <p className="tagline">
-                Share the data with family. Everyone picks their own perspective.
-              </p>
-            </div>
-          )}
+          ) : null}
         </section>
       </main>
     </div>

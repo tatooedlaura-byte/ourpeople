@@ -83,9 +83,12 @@ export const SHORTCUT_LABELS: Record<string, ShortcutLabel> = {
 
   // Aunts & Uncles (blood)
   'parent.sibling':            { neutral: 'aunt/uncle', female: 'aunt', male: 'uncle' },
+  'parent.parent.sibling':     { neutral: 'great-aunt/uncle', female: 'great-aunt', male: 'great-uncle' },
 
   // Nieces & Nephews
   'sibling.child':             { neutral: 'niece/nephew', female: 'niece', male: 'nephew' },
+  'sibling.child.spouse':      { neutral: 'niece/nephew-in-law', female: 'niece-in-law', male: 'nephew-in-law' },
+  'sibling.child.child':       { neutral: 'great-niece/nephew', female: 'great-niece', male: 'great-nephew' },
 
   // Cousins
   'parent.sibling.child':      { neutral: 'cousin' },
