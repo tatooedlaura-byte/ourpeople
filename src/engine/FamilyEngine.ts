@@ -386,14 +386,19 @@ export class FamilyEngine {
 
       if (path && path.types.length > 0) {
         directPathLength = path.types.length;
-        // Add shortcut label if one exists
-        const shortcut = this.getShortcutLabel(path.types, person.gender);
-        if (shortcut) {
-          explanations.push(`your ${shortcut}`);
-        }
-        // Also add name chain for extended family (2+ hops) - shows both!
-        // e.g., "your great-aunt" AND "Grandma Mary's sister"
-        if (path.types.length >= 2) {
+
+        // For single-hop relationships (parent, child, sibling, spouse)
+        if (path.types.length === 1) {
+          const word = this.getRelationshipWord(path.types[0], person.gender);
+          explanations.push(`your ${word}`);
+        } else {
+          // For multi-hop, try shortcut label first
+          const shortcut = this.getShortcutLabel(path.types, person.gender);
+          if (shortcut) {
+            explanations.push(`your ${shortcut}`);
+          }
+          // Also add name chain for extended family - shows both!
+          // e.g., "your great-aunt" AND "Grandma Mary's sister"
           const chain = this.buildNameChain(path, 'your');
           if (chain && chain !== `your ${shortcut}`) {
             explanations.push(chain);
