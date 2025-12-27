@@ -273,6 +273,18 @@ function AppContent() {
       <main className="app-main">
         <aside className="sidebar">
           <div className="sidebar-header">
+            <div className="header-top-row">
+              <button
+                className={`btn-share ${shareStatus === 'copied' ? 'btn-success' : ''}`}
+                onClick={handleShare}
+                disabled={people.length === 0}
+              >
+                {shareStatus === 'copied' ? 'Link Copied!' : shareStatus === 'error' ? 'Failed' : 'Share Link'}
+              </button>
+              <button className="btn-settings" onClick={() => setShowSettings(true)}>
+                Settings
+              </button>
+            </div>
             <input
               type="search"
               placeholder="Search..."
@@ -315,19 +327,6 @@ function AppContent() {
                 />
               ))
             )}
-          </div>
-
-          <div className="sidebar-footer">
-            <button
-              className={`btn-share ${shareStatus === 'copied' ? 'btn-success' : ''}`}
-              onClick={handleShare}
-              disabled={people.length === 0}
-            >
-              {shareStatus === 'copied' ? 'Link Copied!' : shareStatus === 'error' ? 'Failed' : 'Share Link'}
-            </button>
-            <button className="btn-settings" onClick={() => setShowSettings(true)}>
-              Settings
-            </button>
           </div>
 
           {showClearConfirm && (
