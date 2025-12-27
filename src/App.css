@@ -209,14 +209,15 @@ body {
 
 .header-top-row {
   display: flex;
+  justify-content: flex-end;
   gap: 0.5rem;
 }
 
 .header-top-row .btn-share,
 .header-top-row .btn-settings {
-  flex: 1;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  width: auto;
 }
 
 .search-input {
